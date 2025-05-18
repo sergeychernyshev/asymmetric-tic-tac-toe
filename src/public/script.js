@@ -71,6 +71,27 @@ function join() {
 }
 join();
 
+const game = {
+  xTurn: true,
+  xState: [],
+  oState: [],
+  winningStates: [
+    // Rows
+    ['0', '1', '2'],
+    ['3', '4', '5'],
+    ['6', '7', '8'],
+
+    // Columns
+    ['0', '3', '6'],
+    ['1', '4', '7'],
+    ['2', '5', '8'],
+
+    // Diagonal
+    ['0', '4', '8'],
+    ['2', '4', '6'],
+  ],
+};
+
 // This function converts the server state to the game's format and updates the UI
 function updateGameFromServerState(serverState) {
   if (!serverState || !serverState.board) return;
