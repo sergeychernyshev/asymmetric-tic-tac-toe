@@ -71,27 +71,6 @@ function join() {
 }
 join();
 
-const game = {
-  xTurn: true,
-  xState: [],
-  oState: [],
-  winningStates: [
-    // Rows
-    ['0', '1', '2'],
-    ['3', '4', '5'],
-    ['6', '7', '8'],
-
-    // Columns
-    ['0', '3', '6'],
-    ['1', '4', '7'],
-    ['2', '5', '8'],
-
-    // Diagonal
-    ['0', '4', '8'],
-    ['2', '4', '6'],
-  ],
-};
-
 // This function converts the server state to the game's format and updates the UI
 function updateGameFromServerState(serverState) {
   if (!serverState || !serverState.board) return;
@@ -107,6 +86,11 @@ function updateGameFromServerState(serverState) {
 
   // Update from server's board state In server: 0=empty, 1=X, 2=O
   const gridCells = document.querySelectorAll('.grid-cell');
+
+  document.querySelector('.game-over').classList.remove('visible');
+  document.querySelectorAll('.grid-cell').forEach((cell) => {
+    cell.classList.remove('disabled', 'x', 'o');
+  });
 
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
@@ -158,10 +142,8 @@ board.addEventListener('click', (e) => {
 
     game.xTurn = !game.xTurn;
 
-    if (!document.querySelectorAll('.grid-cell:not(.disabled)').length) {
-      document.querySelector('.game-over').classList.add('visible');
-      document.querySelector('.game-over-text').textContent = 'Draw!';
-    }
+    // if (serverState.gameOver) { document.querySelector('.game-over').classList.add('visible');
+    //   document.querySelector('.game-over-text').textContent = 'Draw!'; }
   }
 });
 
