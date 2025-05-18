@@ -113,11 +113,11 @@ function updateGameFromServerState(serverState) {
       const cellValue = row * 3 + col;
       const cellState = serverState.board[row][col];
 
-      if (cellState === 1) {
+      if (cellState === 'X') {
         // X
         game.xState.push(String(cellValue));
         gridCells[cellValue].classList.add('disabled', 'x');
-      } else if (cellState === 2) {
+      } else if (cellState === 'O') {
         // O
         game.oState.push(String(cellValue));
         gridCells[cellValue].classList.add('disabled', 'o');
@@ -127,6 +127,11 @@ function updateGameFromServerState(serverState) {
 
   // Update turn
   game.xTurn = serverState.turn === serverState.mark;
+  if (serverState.gameOver) {
+    document.querySelectorAll('.grid-cell').forEach((cell) => cell.classList.add('disabled'));
+    document.querySelector('.game-over').classList.add('visible');
+    document.querySelector('.game-over-text').textContent = xWins ? 'X wins!' : 'O wins!';
+  }
 }
 
 const squares = document.querySelectorAll('.square');
@@ -157,20 +162,11 @@ board.addEventListener('click', (e) => {
       document.querySelector('.game-over').classList.add('visible');
       document.querySelector('.game-over-text').textContent = 'Draw!';
     }
-    game.winningStates.forEach((winningState) => {
-      const xWins = winningState.every((state) => game.xState.includes(state));
-      const oWins = winningState.every((state) => game.oState.includes(state));
-
-      if (xWins || oWins) {
-        document.querySelectorAll('.grid-cell').forEach((cell) => cell.classList.add('disabled'));
-        document.querySelector('.game-over').classList.add('visible');
-        document.querySelector('.game-over-text').textContent = xWins ? 'X wins!' : 'O wins!';
-      }
-    });
   }
 });
 
 document.querySelector('.restart').addEventListener('click', () => {
+  currentWebSocket.send(JSON.stringify({ restart: true }));
   document.querySelector('.game-over').classList.remove('visible');
   document.querySelectorAll('.grid-cell').forEach((cell) => {
     cell.classList.remove('disabled', 'x', 'o');
