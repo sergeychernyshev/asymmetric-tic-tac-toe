@@ -13,6 +13,47 @@ h1 {
   font-size: 48px;
 }
 
+
+.progress-circle {
+  width: 60px;
+  height: 60px;
+  position: relative;
+  margin: 20px auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.progress-circle .number {
+  position: absolute;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.progress-circle svg {
+  width: 60px;
+  height: 60px;
+  transform: rotate(-90deg);
+}
+
+.progress-circle circle {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+
+.progress-circle .bg {
+  stroke: #f0f0f0;
+}
+
+.progress-circle .progress {
+  stroke: #007bff;
+  stroke-dasharray: 157;
+  /* Approximately 2 * PI * 25 (radius) */
+  stroke-dashoffset: 47.1;
+  /* 157 * 0.3 to show 70% progress */
+}
+
 .game-board {
   display: flex;
   flex-direction: column;
