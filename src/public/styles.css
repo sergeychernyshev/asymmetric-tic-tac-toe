@@ -1,3 +1,58 @@
 body {
   background-color: #fff1a5;
+  height: 100vw;
+}
+
+main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+h1 {
+  font-size: 48px;
+}
+
+.game-board {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1em;
+  background-color: bisque;
+  border: 1px solid black;
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+
+.square {
+  background-color: white;
+  border: 1px solid black;
+  height: 100px;
+  width: 100px;
+}
+
+#connection-info {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5em;
+  align-items: center;
+}
+
+#message {
+  flex-grow: 1;
+}
+
+#chat {
+  border: 1px solid black;
+  padding: 1em;
+}
+
+form {
+  display: flex;
+  gap: 0.5em;
 }
