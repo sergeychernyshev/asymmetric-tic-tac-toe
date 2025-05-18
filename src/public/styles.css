@@ -69,12 +69,22 @@ h1 {
   grid-template-columns: repeat(3, 1fr);
 }
 
-
 .square {
   background-color: white;
   border: 1px solid black;
   height: 100px;
   width: 100px;
+  text-align: center;
+}
+
+.x::after {
+  content: '❌';
+  font-size: 75px;
+}
+
+.o::after {
+  content: '⭕';
+  font-size: 75px;
 }
 
 #connection-info {
