@@ -2,7 +2,7 @@ import { DurableObject } from 'cloudflare:workers';
 
 /** A Durable Object's behavior is defined in an exported Javascript class */
 export class TicTacToeDO extends DurableObject<Env> {
-  //   sql: SqlStorage;
+  sql: SqlStorage;
   tableExists: boolean = false;
   state: any;
 
@@ -15,7 +15,26 @@ export class TicTacToeDO extends DurableObject<Env> {
    */
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
-    this.state = {
+    this.state = this.getInitialState();
+    this.sql = ctx.storage.sql;
+
+    if (!this.tableExists) {
+      const result = this.sql.exec(`
+            CREATE TABLE IF NOT EXISTS board (
+                id		INTEGER PRIMARY KEY AUTOINCREMENT,
+                message	TEXT
+            );
+
+        `);
+
+      this.tableExists = true;
+
+      console.log('CREATE TABLE result: ', result);
+    }
+  }
+
+  private getInitialState() {
+    return {
       board: [
         [0, 0, 0],
         [0, 0, 0],
@@ -23,24 +42,13 @@ export class TicTacToeDO extends DurableObject<Env> {
       ],
       turn: true, // Who's turn is it? true = streamer, false = chat
       started: false,
+      winner: null, // who is the winner: true = streamer, false = chat, null = draw or unknown
+      gameOver: false, // Is the game over?
+
+      // these are config options
       first: true, // First move: true = streamer, false = chat
       mark: true, // Which mark streamer uses? true = X, false = O
     };
-    // this.sql = ctx.storage.sql;
-
-    // if (!this.tableExists) {
-    //   const result = this.sql.exec(`
-    //         CREATE TABLE IF NOT EXISTS board (
-    //             id		INTEGER PRIMARY KEY AUTOINCREMENT,
-    //             message	TEXT
-    //         );
-
-    //     `);
-
-    //   this.tableExists = true;
-
-    //   console.log('CREATE TABLE result: ', result);
-    // }
   }
 
   /**
@@ -71,11 +79,9 @@ export class TicTacToeDO extends DurableObject<Env> {
     });
   }
 
-  async webSocketMessage(ws: WebSocket, messageString: ArrayBuffer | string) {
-    console.log('got a message:', messageString);
-
+  private broadcaseState() {
+    // send new state to all connected clients
     const sockets = this.ctx.getWebSockets();
-
     sockets.forEach((ws) => {
       try {
         ws.send(JSON.stringify(this.state));
@@ -83,6 +89,114 @@ export class TicTacToeDO extends DurableObject<Env> {
         console.log('could not send messages to:', ws);
       }
     });
+  }
+
+  async webSocketMessage(ws: WebSocket, messageString: ArrayBuffer | string) {
+    console.log('got a message:', messageString);
+
+    if (typeof messageString === 'string') {
+      const message = JSON.parse(messageString);
+
+      // restart the game
+      if (message.restart) {
+        console.log('restart:', message.restart);
+
+        this.state = this.getInitialState();
+
+        this.broadcaseState();
+      }
+
+      if (message.move) {
+        console.log('move:', message.move);
+
+        // fix this if UI makes wrong moves
+        const [y, x] = message.move;
+
+        // check if coordinates are valid
+        if (x < 0 || x > 2 || y < 0 || y > 2) {
+          console.log('invalid coordinates', x, y);
+          return;
+        }
+
+        // figure out who is the player and which mark to use
+        let mark;
+        if (this.state.turn) {
+          // streamer made a move
+          mark = this.state.mark ? 'X' : 'O';
+        } else {
+          // chat made a move
+          mark = this.state.mark ? 'O' : 'X';
+        }
+
+        // ignore invalide moves
+        if (this.state.board[x][y] !== 0) {
+          console.log('invalid move', x, y);
+          return;
+        }
+
+        // make the game board change
+        this.state.board[x][y] = mark;
+
+        // let the other side make a move next
+        this.state.turn = !this.state.turn;
+
+        // check if the game is over
+        let over = false;
+        let winner = null;
+        // check rows
+        for (let i = 0; i < 3; i++) {
+          if (this.state.board[i][0] !== 'X' && this.state.board[i][0] !== 'O') {
+            continue;
+          }
+
+          if (this.state.board[i][0] === this.state.board[i][1] && this.state.board[i][1] === this.state.board[i][2]) {
+            over = true;
+          }
+        }
+        // check columns
+        for (let i = 0; i < 3; i++) {
+          if (this.state.board[0][i] !== 'X' && this.state.board[0][i] !== 'O') {
+            continue;
+          }
+          if (this.state.board[0][i] === this.state.board[1][i] && this.state.board[1][i] === this.state.board[2][i]) {
+            over = true;
+          }
+        }
+        // check diagonals
+        if (this.state.board[1][1] === 'X' || this.state.board[1][1] === 'O') {
+          if (this.state.board[0][0] === this.state.board[1][1] && this.state.board[1][1] === this.state.board[2][2]) {
+            over = true;
+          }
+          if (this.state.board[0][2] === this.state.board[1][1] && this.state.board[1][1] === this.state.board[2][0]) {
+            over = true;
+          }
+        }
+
+        // check if the game is a draw
+        if (
+          this.state.board[0].every((cell) => cell !== 0) &&
+          this.state.board[1].every((cell) => cell !== 0) &&
+          this.state.board[2].every((cell) => cell !== 0)
+        ) {
+          over = true;
+        }
+
+        if (over) {
+          this.state.gameOver = true;
+        }
+
+        this.broadcaseState();
+      }
+
+      // user connected, let's send this user the current state
+      if (message.connected) {
+        try {
+          ws.send(JSON.stringify(this.state));
+        } catch (err) {
+          console.log('could not send messages to:', ws);
+        }
+      }
+    }
   }
 
   async webSocketClose(ws: WebSocket, code: number, reason: string, wasClean: boolean) {
