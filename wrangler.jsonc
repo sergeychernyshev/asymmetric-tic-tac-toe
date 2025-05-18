@@ -8,12 +8,12 @@
   "main": "src/index.ts",
   "compatibility_date": "2025-03-03",
   "account_id": "724e55bcae2b4d037e3e85b1a4716da1", // Sergey's Personal Account
-  //   "migrations": [
-  //     {
-  //       "tag": "v1",
-  //       "new_sqlite_classes": ["TicTacToeDO"]
-  //     }
-  //   ],
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["TicTacToeDO"]
+    }
+  ],
   "rules": [
     {
       "type": "Data",
