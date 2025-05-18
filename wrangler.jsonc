@@ -25,14 +25,14 @@
     "directory": "./src/public",
     "binding": "ASSETS"
   },
-  //   "durable_objects": {
-  //     "bindings": [
-  //       {
-  //         "class_name": "TicTacToeDO",
-  //         "name": "TIC_TAC_TOE_DO"
-  //       }
-  //     ]
-  //   },
+  "durable_objects": {
+    "bindings": [
+      {
+        "class_name": "TicTacToeDO",
+        "name": "TIC_TAC_TOE_DO"
+      }
+    ]
+  },
   "observability": {
     "enabled": true
   }

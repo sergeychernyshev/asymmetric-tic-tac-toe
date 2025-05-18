@@ -1,1 +1,67 @@
 console.log('hello, tic-tac-toe is here in your console!');
+
+let lastClientRender = null;
+
+let state = {};
+
+function setConnectionIndicator() {
+  //   socketIndicator.innerText = currentWebSocket ? 'Connected 🟢' : 'Disconnected 🔴';
+  console.log(currentWebSocket ? 'Connected 🟢' : 'Disconnected 🔴');
+}
+
+async function render() {
+  lastClientRender = Date.now();
+  console.log('Rendering...');
+}
+
+let currentWebSocket = null;
+function join() {
+  // If we are running via wrangler dev, use ws:
+  const wss = document.location.protocol === 'http:' ? 'ws://' : 'wss://';
+  let ws = new WebSocket(`${wss}${window.location.hostname}:${window.location.port}/websocket`);
+  let rejoined = false;
+  let startTime = Date.now();
+
+  let rejoin = async () => {
+    if (!rejoined) {
+      rejoined = true;
+      currentWebSocket = null;
+      setConnectionIndicator();
+
+      // Don't try to reconnect too rapidly.
+      let timeSinceLastJoin = Date.now() - startTime;
+      if (timeSinceLastJoin < 10000) {
+        // Less than 10 seconds elapsed since last join. Pause a bit.
+        await new Promise((resolve) => setTimeout(resolve, 10000 - timeSinceLastJoin));
+      }
+
+      // OK, reconnect now!
+      join();
+    }
+  };
+
+  ws.addEventListener('open', (event) => {
+    currentWebSocket = ws;
+    setConnectionIndicator();
+
+    // Send user info message.
+    ws.send(JSON.stringify({ connected: true }));
+  });
+
+  ws.addEventListener('message', (event) => {
+    let message = JSON.parse(event.data);
+    console.log('Received message: ', message);
+  });
+
+  ws.addEventListener('close', (event) => {
+    console.log('WebSocket closed, reconnecting:', event.code, event.reason);
+
+    rejoin();
+  });
+
+  ws.addEventListener('error', (event) => {
+    console.log('WebSocket error, reconnecting:', event);
+    rejoin();
+  });
+}
+join();
