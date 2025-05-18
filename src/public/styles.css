@@ -13,7 +13,6 @@ h1 {
   font-size: 48px;
 }
 
-
 .progress-circle {
   width: 60px;
   height: 60px;
@@ -69,7 +68,7 @@ h1 {
   grid-template-columns: repeat(3, 1fr);
 }
 
-.square {
+.grid-cell {
   background-color: white;
   border: 1px solid black;
   height: 100px;
@@ -106,4 +105,27 @@ h1 {
 form {
   display: flex;
   gap: 0.5em;
+}
+
+.game-over {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: rgb(0 0 0 / 50%) 0 0 0 9999px;
+}
+
+.game-over-text {
+  position: absolute;
+  top: -200px;
+  font-size: 60px;
+  font-family: sans-serif;
+  font-weight: bold;
+  text-align: center;
+  transform: translateX(-30%);
+}
+
+.visible {
+  display: block;
 }
