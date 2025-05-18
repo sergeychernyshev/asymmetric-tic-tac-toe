@@ -2,7 +2,7 @@ import { DurableObject } from 'cloudflare:workers';
 
 /** A Durable Object's behavior is defined in an exported Javascript class */
 export class TicTacToeDO extends DurableObject<Env> {
-  //   sql: SqlStorage;
+  sql: SqlStorage;
   tableExists: boolean = false;
   state: any;
 
@@ -23,24 +23,26 @@ export class TicTacToeDO extends DurableObject<Env> {
       ],
       turn: true, // Who's turn is it? true = streamer, false = chat
       started: false,
+
+      // these are config options
       first: true, // First move: true = streamer, false = chat
       mark: true, // Which mark streamer uses? true = X, false = O
     };
-    // this.sql = ctx.storage.sql;
+    this.sql = ctx.storage.sql;
 
-    // if (!this.tableExists) {
-    //   const result = this.sql.exec(`
-    //         CREATE TABLE IF NOT EXISTS board (
-    //             id		INTEGER PRIMARY KEY AUTOINCREMENT,
-    //             message	TEXT
-    //         );
+    if (!this.tableExists) {
+      const result = this.sql.exec(`
+            CREATE TABLE IF NOT EXISTS board (
+                id		INTEGER PRIMARY KEY AUTOINCREMENT,
+                message	TEXT
+            );
 
-    //     `);
+        `);
 
-    //   this.tableExists = true;
+      this.tableExists = true;
 
-    //   console.log('CREATE TABLE result: ', result);
-    // }
+      console.log('CREATE TABLE result: ', result);
+    }
   }
 
   /**
@@ -74,15 +76,49 @@ export class TicTacToeDO extends DurableObject<Env> {
   async webSocketMessage(ws: WebSocket, messageString: ArrayBuffer | string) {
     console.log('got a message:', messageString);
 
-    const sockets = this.ctx.getWebSockets();
+    if (typeof messageString === 'string') {
+      const message = JSON.parse(messageString);
 
-    sockets.forEach((ws) => {
-      try {
-        ws.send(JSON.stringify(this.state));
-      } catch (err) {
-        console.log('could not send messages to:', ws);
+      if (message.move) {
+        console.log('move:', message.move);
+
+        // fix this if UI makes wrong moves
+        const [y, x] = message.move;
+
+        let mark;
+        if (this.state.turn) {
+          // streamer made a move
+          mark = this.state.mark ? 'X' : 'O';
+        } else {
+          // chat made a move
+          mark = this.state.mark ? 'O' : 'X';
+        }
+
+        this.state.board[x][y] = mark;
+
+        // let the other side make a move next
+        this.state.turn = !this.state.turn;
+
+        // send new state to all connected clients
+        const sockets = this.ctx.getWebSockets();
+        sockets.forEach((ws) => {
+          try {
+            ws.send(JSON.stringify(this.state));
+          } catch (err) {
+            console.log('could not send messages to:', ws);
+          }
+        });
       }
-    });
+
+      // user connected, let's send this user the current state
+      if (message.connected) {
+        try {
+          ws.send(JSON.stringify(this.state));
+        } catch (err) {
+          console.log('could not send messages to:', ws);
+        }
+      }
+    }
   }
 
   async webSocketClose(ws: WebSocket, code: number, reason: string, wasClean: boolean) {
