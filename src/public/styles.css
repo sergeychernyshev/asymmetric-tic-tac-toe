@@ -1,3 +1,131 @@
 body {
   background-color: #fff1a5;
+  height: 100vw;
+}
+
+main {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+h1 {
+  font-size: 48px;
+}
+
+.progress-circle {
+  width: 60px;
+  height: 60px;
+  position: relative;
+  margin: 20px auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.progress-circle .number {
+  position: absolute;
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.progress-circle svg {
+  width: 60px;
+  height: 60px;
+  transform: rotate(-90deg);
+}
+
+.progress-circle circle {
+  fill: none;
+  stroke-width: 8;
+  stroke-linecap: round;
+}
+
+.progress-circle .bg {
+  stroke: #f0f0f0;
+}
+
+.progress-circle .progress {
+  stroke: #007bff;
+  stroke-dasharray: 157;
+  /* Approximately 2 * PI * 25 (radius) */
+  stroke-dashoffset: 47.1;
+  /* 157 * 0.3 to show 70% progress */
+}
+
+.game-board {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1em;
+  background-color: bisque;
+  border: 1px solid black;
+}
+
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.grid-cell {
+  background-color: white;
+  border: 1px solid black;
+  height: 100px;
+  width: 100px;
+  text-align: center;
+}
+
+.x::after {
+  content: '❌';
+  font-size: 75px;
+}
+
+.o::after {
+  content: '⭕';
+  font-size: 75px;
+}
+
+#connection-info {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5em;
+  align-items: center;
+}
+
+#message {
+  flex-grow: 1;
+}
+
+#chat {
+  border: 1px solid black;
+  padding: 1em;
+}
+
+form {
+  display: flex;
+  gap: 0.5em;
+}
+
+.game-over {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: rgb(0 0 0 / 50%) 0 0 0 9999px;
+}
+
+.game-over-text {
+  position: absolute;
+  top: -200px;
+  font-size: 60px;
+  font-family: sans-serif;
+  font-weight: bold;
+  text-align: center;
+  transform: translateX(-30%);
+}
+
+.visible {
+  display: block;
 }
