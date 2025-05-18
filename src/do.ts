@@ -15,19 +15,7 @@ export class TicTacToeDO extends DurableObject<Env> {
    */
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
-    this.state = {
-      board: [
-        [0, 0, 0],
-        [0, 0, 0],
-        [0, 0, 0],
-      ],
-      turn: true, // Who's turn is it? true = streamer, false = chat
-      started: false,
-
-      // these are config options
-      first: true, // First move: true = streamer, false = chat
-      mark: true, // Which mark streamer uses? true = X, false = O
-    };
+    this.state = this.getInitialState();
     this.sql = ctx.storage.sql;
 
     if (!this.tableExists) {
@@ -43,6 +31,24 @@ export class TicTacToeDO extends DurableObject<Env> {
 
       console.log('CREATE TABLE result: ', result);
     }
+  }
+
+  private getInitialState() {
+    return {
+      board: [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+      ],
+      turn: true, // Who's turn is it? true = streamer, false = chat
+      started: false,
+      winner: null, // who is the winner: true = streamer, false = chat, null = draw or unknown
+      gameOver: false, // Is the game over?
+
+      // these are config options
+      first: true, // First move: true = streamer, false = chat
+      mark: true, // Which mark streamer uses? true = X, false = O
+    };
   }
 
   /**
@@ -73,11 +79,32 @@ export class TicTacToeDO extends DurableObject<Env> {
     });
   }
 
+  private broadcaseState() {
+    // send new state to all connected clients
+    const sockets = this.ctx.getWebSockets();
+    sockets.forEach((ws) => {
+      try {
+        ws.send(JSON.stringify(this.state));
+      } catch (err) {
+        console.log('could not send messages to:', ws);
+      }
+    });
+  }
+
   async webSocketMessage(ws: WebSocket, messageString: ArrayBuffer | string) {
     console.log('got a message:', messageString);
 
     if (typeof messageString === 'string') {
       const message = JSON.parse(messageString);
+
+      // restart the game
+      if (message.restart) {
+        console.log('restart:', message.restart);
+
+        this.state = this.getInitialState();
+
+        this.broadcaseState();
+      }
 
       if (message.move) {
         console.log('move:', message.move);
@@ -113,15 +140,7 @@ export class TicTacToeDO extends DurableObject<Env> {
         // let the other side make a move next
         this.state.turn = !this.state.turn;
 
-        // send new state to all connected clients
-        const sockets = this.ctx.getWebSockets();
-        sockets.forEach((ws) => {
-          try {
-            ws.send(JSON.stringify(this.state));
-          } catch (err) {
-            console.log('could not send messages to:', ws);
-          }
-        });
+        this.broadcaseState();
       }
 
       // user connected, let's send this user the current state
