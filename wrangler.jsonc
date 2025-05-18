@@ -21,6 +21,10 @@
       "fallthrough": false
     }
   ],
+  "assets": {
+    "directory": "./src/public",
+    "binding": "ASSETS"
+  },
   //   "durable_objects": {
   //     "bindings": [
   //       {

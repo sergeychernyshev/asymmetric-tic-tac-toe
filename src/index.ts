@@ -1,3 +1,5 @@
+import page from './index.html';
+
 export default {
   /**
    * This is the standard fetch handler for a Cloudflare Worker
@@ -8,6 +10,18 @@ export default {
    * @returns The response to be sent back to the client
    */
   async fetch(request, env, ctx): Promise<Response> {
-    return new Response('Hello, Tic-Tac-Toe!');
+    const url = new URL(request.url);
+    const requestPath = url.pathname;
+
+    let headers = new Headers();
+
+    if (requestPath.endsWith('/')) {
+      headers.set('Content-type', 'text/html; charset=utf-8');
+      headers.set('Cache-control', 'no-store');
+
+      return new Response(page, { headers });
+    }
+
+    return env.ASSETS.fetch(request);
   },
 };
