@@ -140,6 +140,51 @@ export class TicTacToeDO extends DurableObject<Env> {
         // let the other side make a move next
         this.state.turn = !this.state.turn;
 
+        // check if the game is over
+        let over = false;
+        let winner = null;
+        // check rows
+        for (let i = 0; i < 3; i++) {
+          if (this.state.board[i][0] !== 'X' && this.state.board[i][0] !== 'O') {
+            continue;
+          }
+
+          if (this.state.board[i][0] === this.state.board[i][1] && this.state.board[i][1] === this.state.board[i][2]) {
+            over = true;
+          }
+        }
+        // check columns
+        for (let i = 0; i < 3; i++) {
+          if (this.state.board[0][i] !== 'X' && this.state.board[0][i] !== 'O') {
+            continue;
+          }
+          if (this.state.board[0][i] === this.state.board[1][i] && this.state.board[1][i] === this.state.board[2][i]) {
+            over = true;
+          }
+        }
+        // check diagonals
+        if (this.state.board[1][1] === 'X' || this.state.board[1][1] === 'O') {
+          if (this.state.board[0][0] === this.state.board[1][1] && this.state.board[1][1] === this.state.board[2][2]) {
+            over = true;
+          }
+          if (this.state.board[0][2] === this.state.board[1][1] && this.state.board[1][1] === this.state.board[2][0]) {
+            over = true;
+          }
+        }
+
+        // check if the game is a draw
+        if (
+          this.state.board[0].every((cell) => cell !== 0) &&
+          this.state.board[1].every((cell) => cell !== 0) &&
+          this.state.board[2].every((cell) => cell !== 0)
+        ) {
+          over = true;
+        }
+
+        if (over) {
+          this.state.gameOver = true;
+        }
+
         this.broadcaseState();
       }
 
