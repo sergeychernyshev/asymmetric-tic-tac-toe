@@ -85,6 +85,13 @@ export class TicTacToeDO extends DurableObject<Env> {
         // fix this if UI makes wrong moves
         const [y, x] = message.move;
 
+        // check if coordinates are valid
+        if (x < 0 || x > 2 || y < 0 || y > 2) {
+          console.log('invalid coordinates', x, y);
+          return;
+        }
+
+        // figure out who is the player and which mark to use
         let mark;
         if (this.state.turn) {
           // streamer made a move
@@ -94,6 +101,13 @@ export class TicTacToeDO extends DurableObject<Env> {
           mark = this.state.mark ? 'O' : 'X';
         }
 
+        // ignore invalide moves
+        if (this.state.board[x][y] !== 0) {
+          console.log('invalid move', x, y);
+          return;
+        }
+
+        // make the game board change
         this.state.board[x][y] = mark;
 
         // let the other side make a move next
