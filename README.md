@@ -1,11 +1,3 @@
-# asymmetric-tic-tac-toe
+# Asymmetric Tic-Tac-Toe
 
-A mulitplayer asymmetric tic-tac-toe game developed by :
-
-1.Sergey Chernyshev - https://github.com/sergeychernyshev
-
-2.Reid Fuhrman - https://github.com/rjfuhrman42
-
-3.Seraphim Sakiewicz - https://github.com/seraphimsakiewicz
-
-4.Sadam Mohamed - https://github.com/sadam-m
+A mulitplayer asymmetric tic-tac-toe game originally developed at NY Code & Coffee hackathon by: [Sergey Chernyshev](https://github.com/sergeychernyshev), [Reid Fuhrman](https://github.com/rjfuhrman42), [Seraphim Sakiewicz](https://github.com/seraphimsakiewicz) and [Sadam Mohamed](https://github.com/sadam-m).
