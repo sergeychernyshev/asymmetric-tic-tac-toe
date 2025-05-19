@@ -41,6 +41,9 @@ export class TicTacToeDO extends DurableObject<Env> {
   private initState() {
     this.state = this.getEmptyState();
 
+    // delete any corrupted, unparse-able state if there was any
+    this.sql.exec('DELETE FROM state');
+
     // create a single row in the table
     this.sql.exec('INSERT INTO state (json) VALUES (?)', JSON.stringify(this.state));
   }
