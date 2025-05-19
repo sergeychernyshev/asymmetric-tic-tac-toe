@@ -1,9 +1,13 @@
 import { DurableObject } from 'cloudflare:workers';
 
+// Type that helps with retrieving JSON data from SQLite
+type StateEntry = {
+  json: string;
+};
+
 /** A Durable Object's behavior is defined in an exported Javascript class */
 export class TicTacToeDO extends DurableObject<Env> {
   sql: SqlStorage;
-  tableExists: boolean = false;
   state: any;
 
   /**
@@ -15,25 +19,43 @@ export class TicTacToeDO extends DurableObject<Env> {
    */
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
-    this.state = this.getInitialState();
     this.sql = ctx.storage.sql;
 
-    if (!this.tableExists) {
-      const result = this.sql.exec(`
-            CREATE TABLE IF NOT EXISTS board (
-                id		INTEGER PRIMARY KEY AUTOINCREMENT,
-                message	TEXT
-            );
+    // table to hold a single entry in JSON format
+    this.sql.exec(`
+        CREATE TABLE IF NOT EXISTS state (
+          json TEXT
+        );
+      `);
 
-        `);
-
-      this.tableExists = true;
-
-      console.log('CREATE TABLE result: ', result);
+    // load the state from the database or create a new one
+    if (!this.loadState()) {
+      this.initState();
     }
   }
 
-  private getInitialState() {
+  private saveState() {
+    this.sql.exec('UPDATE state SET json = ?', JSON.stringify(this.state));
+  }
+
+  private initState() {
+    this.state = this.getEmptyState();
+
+    // create a single row in the table
+    this.sql.exec('INSERT INTO state (json) VALUES (?)', JSON.stringify(this.state));
+  }
+
+  private loadState() {
+    try {
+      const result = this.sql.exec<StateEntry>('SELECT json FROM state LIMIT 1').one();
+      this.state = JSON.parse(result.json);
+      return true;
+    } catch (err) {
+      return false;
+    }
+  }
+
+  private getEmptyState() {
     return {
       board: [
         [0, 0, 0],
@@ -101,7 +123,8 @@ export class TicTacToeDO extends DurableObject<Env> {
       if (message.restart) {
         console.log('restart:', message.restart);
 
-        this.state = this.getInitialState();
+        this.state = this.getEmptyState();
+        this.saveState();
 
         this.broadcaseState();
       }
@@ -184,6 +207,8 @@ export class TicTacToeDO extends DurableObject<Env> {
         if (over) {
           this.state.gameOver = true;
         }
+
+        this.saveState();
 
         this.broadcaseState();
       }
