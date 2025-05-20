@@ -15,15 +15,6 @@ export default {
     const url = new URL(request.url);
     const requestPath = url.pathname;
 
-    let headers = new Headers();
-
-    if (requestPath.endsWith('/')) {
-      headers.set('Content-type', 'text/html; charset=utf-8');
-      headers.set('Cache-control', 'no-store');
-
-      return new Response(page, { headers });
-    }
-
     let id: DurableObjectId = env.TIC_TAC_TOE_DO.idFromName('tic-tac-toe');
 
     // This stub creates a communication channel with the Durable Object instance
