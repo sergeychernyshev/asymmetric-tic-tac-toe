@@ -5,10 +5,38 @@ type StateEntry = {
   json: string;
 };
 
+type CellValue = number | Mark;
+
+type Player = boolean;
+
+type Board = CellValue[][];
+
+type State = {
+  board: Board;
+  turn: Player; // Who's turn is it? true = streamer, false = chat
+  started: boolean;
+  winner: Player | null; // who is the winner: true = streamer, false = chat, null = draw or unknown
+  gameOver: boolean; // Is the game over?
+  first: Player; // First move: true = streamer, false = chat
+  streamerMark: boolean; // Which mark streamer uses? true = X, false = O
+};
+
+// configuration settings
+const STREAMER: Player = true;
+const CHAT: Player = false;
+const X = true;
+const O = false;
+
+// values of the state object
+enum Mark {
+  X = 'X',
+  O = 'O',
+}
+
 /** A Durable Object's behavior is defined in an exported Javascript class */
 export class TicTacToeDO extends DurableObject<Env> {
   sql: SqlStorage;
-  state: any;
+  state: State;
 
   /**
    * The constructor is invoked once upon creation of the Durable Object, i.e. the first call to
@@ -28,6 +56,8 @@ export class TicTacToeDO extends DurableObject<Env> {
         );
       `);
 
+    this.state = this.getEmptyState();
+
     // load the state from the database or create a new one
     if (!this.loadState()) {
       this.initState();
@@ -39,8 +69,6 @@ export class TicTacToeDO extends DurableObject<Env> {
   }
 
   private initState() {
-    this.state = this.getEmptyState();
-
     // delete any corrupted, unparse-able state if there was any
     this.sql.exec('DELETE FROM state');
 
@@ -58,21 +86,21 @@ export class TicTacToeDO extends DurableObject<Env> {
     }
   }
 
-  private getEmptyState() {
+  private getEmptyState(): State {
     return {
       board: [
         [0, 0, 0],
         [0, 0, 0],
         [0, 0, 0],
       ],
-      turn: true, // Who's turn is it? true = streamer, false = chat
+      turn: STREAMER, // Who's turn is it? true = streamer, false = chat
       started: false,
       winner: null, // who is the winner: true = streamer, false = chat, null = draw or unknown
       gameOver: false, // Is the game over?
 
       // these are config options
-      first: true, // First move: true = streamer, false = chat
-      mark: true, // Which mark streamer uses? true = X, false = O
+      first: STREAMER, // First move: true = streamer, false = chat
+      streamerMark: X, // Which mark streamer uses? true = X, false = O
     };
   }
 
@@ -145,13 +173,13 @@ export class TicTacToeDO extends DurableObject<Env> {
         }
 
         // figure out who is the player and which mark to use
-        let mark;
+        let mark: Mark;
         if (this.state.turn) {
           // streamer made a move
-          mark = this.state.mark ? 'X' : 'O';
+          mark = this.state.streamerMark ? Mark.X : Mark.O;
         } else {
           // chat made a move
-          mark = this.state.mark ? 'O' : 'X';
+          mark = this.state.streamerMark ? Mark.O : Mark.X;
         }
 
         // ignore invalide moves
@@ -171,7 +199,7 @@ export class TicTacToeDO extends DurableObject<Env> {
         let winner = null;
         // check rows
         for (let i = 0; i < 3; i++) {
-          if (this.state.board[i][0] !== 'X' && this.state.board[i][0] !== 'O') {
+          if (this.state.board[i][0] !== Mark.X && this.state.board[i][0] !== Mark.O) {
             continue;
           }
 
@@ -181,7 +209,7 @@ export class TicTacToeDO extends DurableObject<Env> {
         }
         // check columns
         for (let i = 0; i < 3; i++) {
-          if (this.state.board[0][i] !== 'X' && this.state.board[0][i] !== 'O') {
+          if (this.state.board[0][i] !== Mark.X && this.state.board[0][i] !== Mark.O) {
             continue;
           }
           if (this.state.board[0][i] === this.state.board[1][i] && this.state.board[1][i] === this.state.board[2][i]) {
@@ -189,7 +217,7 @@ export class TicTacToeDO extends DurableObject<Env> {
           }
         }
         // check diagonals
-        if (this.state.board[1][1] === 'X' || this.state.board[1][1] === 'O') {
+        if (this.state.board[1][1] === Mark.X || this.state.board[1][1] === Mark.O) {
           if (this.state.board[0][0] === this.state.board[1][1] && this.state.board[1][1] === this.state.board[2][2]) {
             over = true;
           }

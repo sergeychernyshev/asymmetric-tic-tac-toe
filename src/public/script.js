@@ -1,4 +1,26 @@
-console.log('hello, tic-tac-toe is here in your console!');
+// configuration settings
+const STREAMER = true;
+const CHAT = false;
+const X = true;
+const O = false;
+
+// values of the state object
+const XMark = 'X';
+const OMark = 'O';
+
+// CSS classes for the grid cells
+const XClass = 'x';
+const OClass = 'o';
+
+function getTurnMark(state) {
+  if (state.streamerMark === X) {
+    return state.turn === X ? XMark : OMark;
+  }
+
+  if (state.streamerMark === O) {
+    return state.turn === O ? OMark : XMark;
+  }
+}
 
 let lastClientRender = null;
 
@@ -51,11 +73,11 @@ function join() {
 
   // receive a message
   ws.addEventListener('message', (event) => {
-    let serverState = JSON.parse(event.data);
-    console.log('Received game state from server:', serverState);
+    state = JSON.parse(event.data);
+    console.log('Received game state from server:', state);
 
     // Convert the server's 2D board to our game format
-    updateGameFromServerState(serverState);
+    updateGameFromstate(state);
   });
 
   ws.addEventListener('close', (event) => {
@@ -71,71 +93,35 @@ function join() {
 }
 join();
 
-const game = {
-  xTurn: true,
-  xState: [],
-  oState: [],
-  winningStates: [
-    // Rows
-    ['0', '1', '2'],
-    ['3', '4', '5'],
-    ['6', '7', '8'],
-
-    // Columns
-    ['0', '3', '6'],
-    ['1', '4', '7'],
-    ['2', '5', '8'],
-
-    // Diagonal
-    ['0', '4', '8'],
-    ['2', '4', '6'],
-  ],
-};
-
 // This function converts the server state to the game's format and updates the UI
-function updateGameFromServerState(serverState) {
-  if (!serverState || !serverState.board) return;
-
-  // Clear previous game state
-  game.xState = [];
-  game.oState = [];
+function updateGameFromstate(state) {
+  if (!state || !state.board) return;
 
   // Clear UI
   document.querySelectorAll('.grid-cell').forEach((cell) => {
-    cell.classList.remove('disabled', 'x', 'o');
+    cell.classList.remove('disabled', XClass, OClass);
   });
 
   // Update from server's board state In server: 0=empty, 1=X, 2=O
   const gridCells = document.querySelectorAll('.grid-cell');
 
-  document.querySelector('.game-over').classList.remove('visible');
-  document.querySelectorAll('.grid-cell').forEach((cell) => {
-    cell.classList.remove('disabled', 'x', 'o');
-  });
-
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
       const cellValue = row * 3 + col;
-      const cellState = serverState.board[row][col];
+      const cellState = state.board[row][col];
 
-      if (cellState === 'X') {
-        // X
-        game.xState.push(String(cellValue));
-        gridCells[cellValue].classList.add('disabled', 'x');
-      } else if (cellState === 'O') {
-        // O
-        game.oState.push(String(cellValue));
-        gridCells[cellValue].classList.add('disabled', 'o');
+      if (cellState === XMark) {
+        gridCells[cellValue].classList.add('disabled', XClass);
+      } else if (cellState === OMark) {
+        gridCells[cellValue].classList.add('disabled', OClass);
       }
     }
   }
 
   // Update turn
-  game.xTurn = serverState.turn === serverState.mark;
-  if (serverState.gameOver) {
+  if (state.gameOver) {
     document.querySelectorAll('.grid-cell').forEach((cell) => cell.classList.add('disabled'));
     document.querySelector('.game-over').classList.add('visible');
-    document.querySelector('.game-over-text').textContent = xWins ? 'X wins!' : 'O wins!';
   }
 }
 
@@ -143,8 +129,6 @@ const squares = document.querySelectorAll('.square');
 const board = document.querySelector('.game-grid');
 
 board.addEventListener('click', (e) => {
-  console.log('righthere!', e.target.classList);
-
   const target = event.target;
   const isCell = target.classList.contains('grid-cell');
   const isDisabled = target.classList.contains('disabled');
@@ -154,17 +138,10 @@ board.addEventListener('click', (e) => {
     const cellValueX = Number.parseInt(target.dataset.x);
     const cellValueY = Number.parseInt(target.dataset.y);
     currentWebSocket.send(JSON.stringify({ move: [cellValueX, cellValueY] }));
+
     // The player clicked on a cell that is still empty
-
-    // game.xTurn === true ? game.xState.push(cellValue) : game.oState.push(cellValue);
-
     target.classList.add('disabled');
-    target.classList.add(game.xTurn ? 'x' : 'o');
-
-    game.xTurn = !game.xTurn;
-
-    // if (serverState.gameOver) { document.querySelector('.game-over').classList.add('visible');
-    //   document.querySelector('.game-over-text').textContent = 'Draw!'; }
+    target.classList.add(getTurnMark(state));
   }
 });
 
@@ -172,10 +149,6 @@ document.querySelector('.restart').addEventListener('click', () => {
   currentWebSocket.send(JSON.stringify({ restart: true }));
   document.querySelector('.game-over').classList.remove('visible');
   document.querySelectorAll('.grid-cell').forEach((cell) => {
-    cell.classList.remove('disabled', 'x', 'o');
+    cell.classList.remove('disabled', XClass, OClass);
   });
-
-  game.xTurn = true;
-  game.xState = [];
-  game.oState = [];
 });
