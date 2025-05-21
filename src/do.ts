@@ -87,7 +87,7 @@ export class TicTacToeDO extends DurableObject<Env> {
   }
 
   private getEmptyState(): State {
-    return {
+    const emptyState = {
       board: [
         [0, 0, 0],
         [0, 0, 0],
@@ -102,6 +102,14 @@ export class TicTacToeDO extends DurableObject<Env> {
       first: STREAMER, // First move: true = streamer, false = chat
       streamerMark: X, // Which mark streamer uses? true = X, false = O
     };
+
+    if (emptyState.first === STREAMER) {
+      emptyState.turn = STREAMER;
+    } else {
+      emptyState.turn = CHAT;
+    }
+
+    return emptyState;
   }
 
   /**

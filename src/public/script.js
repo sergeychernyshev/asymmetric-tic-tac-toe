@@ -11,6 +11,7 @@ const OMark = 'O';
 // CSS classes for the grid cells
 const XClass = 'x';
 const OClass = 'o';
+const TurnClass = 'turn';
 
 function getTurnMark(state) {
   if (state.streamerMark === X) {
@@ -95,6 +96,26 @@ join();
 // This function converts the server state to the game's format and updates the UI
 function updateGameFromstate(state) {
   if (!state || !state.board) return;
+
+  const streamer = document.querySelector('.streamer');
+  const chat = document.querySelector('.chat');
+
+  streamer.classList.remove(XClass, OClass, TurnClass);
+  chat.classList.remove(XClass, OClass, TurnClass);
+
+  if (state.streamerMark === X) {
+    streamer.classList.add(XClass);
+    chat.classList.add(OClass);
+  } else {
+    streamer.classList.add(OClass);
+    chat.classList.add(XClass);
+  }
+
+  if (state.turn === STREAMER) {
+    streamer.classList.add(TurnClass);
+  } else {
+    chat.classList.add(TurnClass);
+  }
 
   // Clear UI
   document.querySelectorAll('.grid-cell').forEach((cell) => {
