@@ -15,11 +15,11 @@ const TurnClass = 'turn';
 
 function getTurnMark(state) {
   if (state.streamerMark === X) {
-    return state.turn === X ? XMark : OMark;
+    return state.turn === STREAMER ? XMark : OMark;
   }
 
   if (state.streamerMark === O) {
-    return state.turn === O ? OMark : XMark;
+    return state.turn === CHAT ? OMark : XMark;
   }
 }
 
