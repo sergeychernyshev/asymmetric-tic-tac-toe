@@ -23,17 +23,10 @@ function getTurnMark(state) {
   }
 }
 
-let lastClientRender = null;
-
 let state = {};
 
 function setConnectionIndicator() {
   console.log(currentWebSocket ? 'Connected 🟢' : 'Disconnected 🔴');
-}
-
-async function render() {
-  lastClientRender = Date.now();
-  console.log('Rendering...');
 }
 
 let currentWebSocket = null;
