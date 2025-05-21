@@ -142,6 +142,8 @@ function updateGameFromstate(state) {
   if (state.gameOver) {
     document.querySelectorAll('.grid-cell').forEach((cell) => cell.classList.add('disabled'));
     document.querySelector('.game-over').classList.add('visible');
+  } else {
+    document.querySelector('.game-over').classList.remove('visible');
   }
 }
 
