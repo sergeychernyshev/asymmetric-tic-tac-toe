@@ -23,6 +23,14 @@ function getTurnMark(state) {
   }
 }
 
+function sendMessage(messageObject) {
+  if (currentWebSocket) {
+    currentWebSocket.send(JSON.stringify(messageObject));
+  } else {
+    console.error('WebSocket is not connected');
+  }
+}
+
 let state = {};
 
 function setConnectionIndicator() {
@@ -61,7 +69,7 @@ function join() {
     setConnectionIndicator();
 
     // Send user info message. use this to send a message.
-    ws.send(JSON.stringify({ connected: true }));
+    sendMessage({ connected: true });
   });
 
   // receive a message
@@ -151,7 +159,7 @@ board.addEventListener('click', (e) => {
   if (isCell && !isDisabled && currentWebSocket !== null) {
     const cellValueX = Number.parseInt(target.dataset.x);
     const cellValueY = Number.parseInt(target.dataset.y);
-    currentWebSocket.send(JSON.stringify({ move: [cellValueX, cellValueY] }));
+    sendMessage({ move: [cellValueX, cellValueY] });
 
     // The player clicked on a cell that is still empty
     target.classList.add('disabled');
@@ -160,7 +168,7 @@ board.addEventListener('click', (e) => {
 });
 
 document.querySelector('.restart').addEventListener('click', () => {
-  currentWebSocket.send(JSON.stringify({ restart: true }));
+  sendMessage({ restart: true });
   document.querySelector('.game-over').classList.remove('visible');
   document.querySelectorAll('.grid-cell').forEach((cell) => {
     cell.classList.remove('disabled', XClass, OClass);
