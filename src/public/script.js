@@ -27,7 +27,6 @@ let lastClientRender = null;
 let state = {};
 
 function setConnectionIndicator() {
-  //   socketIndicator.innerText = currentWebSocket ? 'Connected 🟢' : 'Disconnected 🔴';
   console.log(currentWebSocket ? 'Connected 🟢' : 'Disconnected 🔴');
 }
 
@@ -134,7 +133,6 @@ board.addEventListener('click', (e) => {
   const isDisabled = target.classList.contains('disabled');
 
   if (isCell && !isDisabled && currentWebSocket !== null) {
-    // currentWebSocket.send(JSON.stringify({ move: [0,0]}));
     const cellValueX = Number.parseInt(target.dataset.x);
     const cellValueY = Number.parseInt(target.dataset.y);
     currentWebSocket.send(JSON.stringify({ move: [cellValueX, cellValueY] }));
