@@ -1,8 +1,6 @@
 // configuration settings
 const STREAMER = true;
 const CHAT = false;
-const X = true;
-const O = false;
 
 // values of the state object
 const XMark = 'X';
@@ -12,14 +10,15 @@ const OMark = 'O';
 const XClass = 'x';
 const OClass = 'o';
 const TurnClass = 'turn';
+const WinnerClass = 'winner';
 
 function getTurnMark(state) {
-  if (state.streamerMark === X) {
+  if (state.streamerMark === XMark) {
     return state.turn === STREAMER ? XMark : OMark;
   }
 
-  if (state.streamerMark === O) {
-    return state.turn === CHAT ? OMark : XMark;
+  if (state.streamerMark === OMark) {
+    return state.turn === CHAT ? XMark : OMark;
   }
 }
 
@@ -104,7 +103,7 @@ function updateGameFromstate(state) {
   streamer.classList.remove(XClass, OClass, TurnClass);
   chat.classList.remove(XClass, OClass, TurnClass);
 
-  if (state.streamerMark === X) {
+  if (state.streamerMark === XMark) {
     streamer.classList.add(XClass);
     chat.classList.add(OClass);
   } else {
@@ -120,7 +119,7 @@ function updateGameFromstate(state) {
 
   // Clear UI
   document.querySelectorAll('.grid-cell').forEach((cell) => {
-    cell.classList.remove('disabled', XClass, OClass);
+    cell.classList.remove('disabled', XClass, OClass, WinnerClass);
   });
 
   // Update from server's board state In server: 0=empty, 1=X, 2=O
@@ -128,13 +127,13 @@ function updateGameFromstate(state) {
 
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
-      const cellValue = row * 3 + col;
+      const cellIndex = row * 3 + col;
       const cellState = state.board[row][col];
 
       if (cellState === XMark) {
-        gridCells[cellValue].classList.add('disabled', XClass);
+        gridCells[cellIndex].classList.add('disabled', XClass);
       } else if (cellState === OMark) {
-        gridCells[cellValue].classList.add('disabled', OClass);
+        gridCells[cellIndex].classList.add('disabled', OClass);
       }
     }
   }
@@ -143,8 +142,22 @@ function updateGameFromstate(state) {
   if (state.gameOver) {
     document.querySelectorAll('.grid-cell').forEach((cell) => cell.classList.add('disabled'));
     document.querySelector('.game-over').classList.add('visible');
+
+    if (state.winner === STREAMER) {
+      streamer.classList.add(WinnerClass);
+    }
+    if (state.winner === CHAT) {
+      chat.classList.add(WinnerClass);
+    }
+
+    state.winnerCoordinates.forEach((cell) => {
+      gridCells[cell[0] * 3 + cell[1]].classList.add(WinnerClass);
+    });
   } else {
     document.querySelector('.game-over').classList.remove('visible');
+
+    streamer.classList.remove(WinnerClass);
+    chat.classList.remove(WinnerClass);
   }
 }
 

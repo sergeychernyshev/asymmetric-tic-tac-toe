@@ -11,21 +11,22 @@ type Player = boolean;
 
 type Board = CellValue[][];
 
+type Coordinates = number[];
+
 type State = {
   board: Board;
-  turn: Player; // Who's turn is it? true = streamer, false = chat
-  started: boolean;
-  winner: Player | null; // who is the winner: true = streamer, false = chat, null = draw or unknown
+  turn: Player; // Who's turn is it?
+  started: boolean; // did game start?
+  winner: Player | null; // who is the winner
   gameOver: boolean; // Is the game over?
-  first: Player; // First move: true = streamer, false = chat
-  streamerMark: boolean; // Which mark streamer uses? true = X, false = O
+  first: Player; // First move
+  streamerMark: Mark; // Which mark streamer uses?
+  winnerCoordinates: Coordinates[]; // array of coordinate pairs
 };
 
 // configuration settings
 const STREAMER: Player = true;
 const CHAT: Player = false;
-const X = true;
-const O = false;
 
 // values of the state object
 enum Mark {
@@ -100,7 +101,8 @@ export class TicTacToeDO extends DurableObject<Env> {
 
       // these are config options
       first: STREAMER, // First move: true = streamer, false = chat
-      streamerMark: X, // Which mark streamer uses? true = X, false = O
+      streamerMark: Mark.X, // Which mark streamer uses? true = X, false = O
+      winnerCoordinates: [],
     };
 
     if (emptyState.first === STREAMER) {
@@ -171,7 +173,6 @@ export class TicTacToeDO extends DurableObject<Env> {
       if (message.move) {
         console.log('move:', message.move);
 
-        // fix this if UI makes wrong moves
         const [y, x] = message.move;
 
         // check if coordinates are valid
@@ -182,12 +183,12 @@ export class TicTacToeDO extends DurableObject<Env> {
 
         // figure out who is the player and which mark to use
         let mark: Mark;
-        if (this.state.turn) {
+        if (this.state.turn === STREAMER) {
           // streamer made a move
-          mark = this.state.streamerMark ? Mark.X : Mark.O;
+          mark = this.state.streamerMark;
         } else {
           // chat made a move
-          mark = this.state.streamerMark ? Mark.O : Mark.X;
+          mark = this.state.streamerMark === Mark.X ? Mark.O : Mark.X;
         }
 
         // ignore invalide moves
@@ -204,7 +205,7 @@ export class TicTacToeDO extends DurableObject<Env> {
 
         // check if the game is over
         let over = false;
-        let winner = null;
+        let winnerMark = null;
         // check rows
         for (let i = 0; i < 3; i++) {
           if (this.state.board[i][0] !== Mark.X && this.state.board[i][0] !== Mark.O) {
@@ -213,6 +214,8 @@ export class TicTacToeDO extends DurableObject<Env> {
 
           if (this.state.board[i][0] === this.state.board[i][1] && this.state.board[i][1] === this.state.board[i][2]) {
             over = true;
+            winnerMark = this.state.board[i][0];
+            this.state.winnerCoordinates.push([i, 0], [i, 1], [i, 2]);
           }
         }
         // check columns
@@ -222,15 +225,29 @@ export class TicTacToeDO extends DurableObject<Env> {
           }
           if (this.state.board[0][i] === this.state.board[1][i] && this.state.board[1][i] === this.state.board[2][i]) {
             over = true;
+            winnerMark = this.state.board[0][i];
+            this.state.winnerCoordinates.push([0, i], [1, i], [2, i]);
           }
         }
         // check diagonals
         if (this.state.board[1][1] === Mark.X || this.state.board[1][1] === Mark.O) {
           if (this.state.board[0][0] === this.state.board[1][1] && this.state.board[1][1] === this.state.board[2][2]) {
             over = true;
+            winnerMark = this.state.board[1][1];
+            this.state.winnerCoordinates.push([0, 0], [1, 1], [2, 2]);
           }
           if (this.state.board[0][2] === this.state.board[1][1] && this.state.board[1][1] === this.state.board[2][0]) {
             over = true;
+            winnerMark = this.state.board[1][1];
+            this.state.winnerCoordinates.push([0, 2], [1, 1], [2, 0]);
+          }
+        }
+
+        if (winnerMark !== null) {
+          if (winnerMark === this.state.streamerMark) {
+            this.state.winner = STREAMER;
+          } else {
+            this.state.winner = CHAT;
           }
         }
 
@@ -243,9 +260,7 @@ export class TicTacToeDO extends DurableObject<Env> {
           over = true;
         }
 
-        if (over) {
-          this.state.gameOver = true;
-        }
+        this.state.gameOver = over;
 
         this.saveState();
 
