@@ -73,6 +73,12 @@ h1 {
   height: 100px;
   width: 100px;
   text-align: center;
+  cursor: pointer;
+}
+
+.grid-cell.disabled {
+  cursor: not-allowed;
+  background-color: #ededed;
 }
 
 .x::before {
