@@ -41,7 +41,7 @@ let currentWebSocket = null;
 function join() {
   // If we are running via wrangler dev, use ws:
   const wss = document.location.protocol === 'http:' ? 'ws://' : 'wss://';
-  let ws = new WebSocket(`${wss}${window.location.hostname}:${window.location.port}/websocket`);
+  let ws = new WebSocket(`${wss}${window.location.hostname}:${window.location.port}/websocket?${window.location.hash.replace('#', '')}`);
   let rejoined = false;
   let startTime = Date.now();
 

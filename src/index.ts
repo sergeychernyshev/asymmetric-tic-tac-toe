@@ -15,7 +15,14 @@ export default {
     const url = new URL(request.url);
     const requestPath = url.pathname;
 
-    let id: DurableObjectId = env.TIC_TAC_TOE_DO.idFromName('tic-tac-toe');
+    let gameID = url.searchParams.get('game');
+    console.log('gameID:', gameID);
+    if (gameID === null || !gameID.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
+      gameID = '';
+    }
+    console.log('gameID:', gameID);
+
+    let id: DurableObjectId = env.TIC_TAC_TOE_DO.idFromName(gameID);
 
     // This stub creates a communication channel with the Durable Object instance
     // The Durable Object constructor will be invoked upon the first call for a given id
