@@ -58,6 +58,7 @@ h1 {
   background-color: bisque;
   border: 1px solid black;
   border-radius: 5px;
+  gap: 1em;
 }
 
 .game-grid {
@@ -75,13 +76,17 @@ h1 {
 }
 
 .x::before {
-  content: '❌';
-  font-size: 75px;
+  content: url('/x.svg');
+  width: 75px;
+  height: 75px;
+  stroke: black;
 }
 
 .o::before {
-  content: '⭕';
-  font-size: 75px;
+  content: url('/o.svg');
+  width: 75px;
+  height: 75px;
+  stroke: black;
 }
 
 .player {
@@ -122,7 +127,6 @@ h1 {
   width: 100%;
   display: flex;
   justify-content: space-between;
-  margin: 10px;
 }
 
 #connection-info {
@@ -148,21 +152,6 @@ form {
 
 .game-over {
   display: none;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  box-shadow: rgb(0 0 0 / 50%) 0 0 0 9999px;
-}
-
-.game-over-text {
-  position: absolute;
-  top: -200px;
-  font-size: 60px;
-  font-family: sans-serif;
-  font-weight: bold;
-  text-align: center;
-  transform: translateX(-30%);
 }
 
 .visible {
@@ -170,6 +159,6 @@ form {
 }
 
 .restart {
-  font-size: 2em;
+  font-size: 1.5em;
   padding: 0.5em;
 }
