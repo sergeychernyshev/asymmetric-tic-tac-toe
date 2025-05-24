@@ -159,6 +159,10 @@ form {
   display: none;
 }
 
+.sync {
+  display: none;
+}
+
 .visible {
   display: block;
 }
