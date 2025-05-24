@@ -175,5 +175,5 @@ form {
 
 .sync.hide {
   opacity: 0;
-  transition: opacity 1.5s cubic-bezier(0.64, 0, 0.78, 0);
+  transition: opacity 1s cubic-bezier(0.64, 0, 0.78, 0);
 }
