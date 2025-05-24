@@ -160,15 +160,11 @@ export class TicTacToeDO extends DurableObject<Env> {
   }
 
   async webSocketMessage(ws: WebSocket, messageString: ArrayBuffer | string) {
-    console.log('got a message:', messageString);
-
     if (typeof messageString === 'string') {
       const message = JSON.parse(messageString);
 
       // restart the game
       if (message.restart) {
-        console.log('restart:', message.restart);
-
         this.state = this.getEmptyState();
         this.saveState();
 
@@ -176,8 +172,6 @@ export class TicTacToeDO extends DurableObject<Env> {
       }
 
       if (message.move) {
-        console.log('move:', message.move);
-
         const [y, x] = message.move;
 
         // check if coordinates are valid
