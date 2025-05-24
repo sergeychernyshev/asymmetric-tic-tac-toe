@@ -192,7 +192,6 @@ board.addEventListener('click', (e) => {
     sendMessage({ move: [cellValueX, cellValueY] });
 
     // The player clicked on a cell that is still empty
-    target.classList.add(DisabledClass);
     target.classList.add(getTurnMark(state) === XMark ? XClass : OClass);
 
     player.forEach((cell) => {
