@@ -24,6 +24,9 @@ const board = document.querySelector('.game-grid');
 const restart = document.querySelector('.restart');
 const player = document.querySelectorAll('.player');
 
+// disable UI till next data is received
+let disableUI = false;
+
 function getTurnMark(state) {
   if (state.streamerMark === XMark) {
     return state.turn === STREAMER ? XMark : OMark;
@@ -88,6 +91,7 @@ function join() {
 
     // Convert the server's 2D board to our game format
     updateGameFromstate(state);
+    disableUI = false;
   });
 
   ws.addEventListener('close', (event) => {
@@ -173,6 +177,10 @@ function updateGameFromstate(state) {
 }
 
 board.addEventListener('click', (e) => {
+  if (disableUI) {
+    return;
+  }
+
   const target = event.target;
   const isCell = target.classList.contains('grid-cell');
   const isDisabled = target.classList.contains(DisabledClass);
@@ -180,6 +188,7 @@ board.addEventListener('click', (e) => {
   if (isCell && !isDisabled && currentWebSocket !== null) {
     const cellValueX = Number.parseInt(target.dataset.x);
     const cellValueY = Number.parseInt(target.dataset.y);
+    disableUI = true;
     sendMessage({ move: [cellValueX, cellValueY] });
 
     // The player clicked on a cell that is still empty
