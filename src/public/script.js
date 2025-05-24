@@ -1,6 +1,6 @@
 // configuration settings
-const STREAMER = true;
-const CHAT = false;
+const STREAMER = 'streamer';
+const CHAT = 'chat';
 
 // values of the state object
 const XMark = 'X';
@@ -11,6 +11,18 @@ const XClass = 'x';
 const OClass = 'o';
 const TurnClass = 'turn';
 const WinnerClass = 'winner';
+const DisabledClass = 'disabled';
+
+// DOM elements
+const favicon = document.querySelector("link[rel='icon']");
+const streamer = document.querySelector('.streamer');
+const chat = document.querySelector('.chat');
+const gridCells = document.querySelectorAll('.grid-cell');
+const gameOver = document.querySelector('.game-over');
+const squares = document.querySelectorAll('.square');
+const board = document.querySelector('.game-grid');
+const restart = document.querySelector('.restart');
+const player = document.querySelectorAll('.player');
 
 function getTurnMark(state) {
   if (state.streamerMark === XMark) {
@@ -29,8 +41,6 @@ function sendMessage(messageObject) {
     console.error('WebSocket is not connected');
   }
 }
-
-let state = {};
 
 function setConnectionIndicator() {
   console.log(currentWebSocket ? 'Connected 🟢' : 'Disconnected 🔴');
@@ -97,9 +107,6 @@ join();
 function updateGameFromstate(state) {
   if (!state || !state.board) return;
 
-  const streamer = document.querySelector('.streamer');
-  const chat = document.querySelector('.chat');
-
   streamer.classList.remove(XClass, OClass, TurnClass);
   chat.classList.remove(XClass, OClass, TurnClass);
 
@@ -117,31 +124,35 @@ function updateGameFromstate(state) {
     chat.classList.add(TurnClass);
   }
 
+  if (getTurnMark(state) === XMark) {
+    favicon.href = '/x-favicon.png';
+  } else {
+    favicon.href = '/o-favicon.png';
+  }
+
   // Clear UI
-  document.querySelectorAll('.grid-cell').forEach((cell) => {
-    cell.classList.remove('disabled', XClass, OClass, WinnerClass);
+  gridCells.forEach((cell) => {
+    cell.classList.remove(DisabledClass, XClass, OClass, WinnerClass);
   });
 
   // Update from server's board state In server: 0=empty, 1=X, 2=O
-  const gridCells = document.querySelectorAll('.grid-cell');
-
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
       const cellIndex = row * 3 + col;
       const cellState = state.board[row][col];
 
       if (cellState === XMark) {
-        gridCells[cellIndex].classList.add('disabled', XClass);
+        gridCells[cellIndex].classList.add(DisabledClass, XClass);
       } else if (cellState === OMark) {
-        gridCells[cellIndex].classList.add('disabled', OClass);
+        gridCells[cellIndex].classList.add(DisabledClass, OClass);
       }
     }
   }
 
   // Update turn
   if (state.gameOver) {
-    document.querySelectorAll('.grid-cell').forEach((cell) => cell.classList.add('disabled'));
-    document.querySelector('.game-over').classList.add('visible');
+    gridCells.forEach((cell) => cell.classList.add(DisabledClass));
+    gameOver.classList.add('visible');
 
     if (state.winner === STREAMER) {
       streamer.classList.add(WinnerClass);
@@ -154,20 +165,17 @@ function updateGameFromstate(state) {
       gridCells[cell[0] * 3 + cell[1]].classList.add(WinnerClass);
     });
   } else {
-    document.querySelector('.game-over').classList.remove('visible');
+    gameOver.classList.remove('visible');
 
     streamer.classList.remove(WinnerClass);
     chat.classList.remove(WinnerClass);
   }
 }
 
-const squares = document.querySelectorAll('.square');
-const board = document.querySelector('.game-grid');
-
 board.addEventListener('click', (e) => {
   const target = event.target;
   const isCell = target.classList.contains('grid-cell');
-  const isDisabled = target.classList.contains('disabled');
+  const isDisabled = target.classList.contains(DisabledClass);
 
   if (isCell && !isDisabled && currentWebSocket !== null) {
     const cellValueX = Number.parseInt(target.dataset.x);
@@ -175,15 +183,18 @@ board.addEventListener('click', (e) => {
     sendMessage({ move: [cellValueX, cellValueY] });
 
     // The player clicked on a cell that is still empty
-    target.classList.add('disabled');
+    target.classList.add(DisabledClass);
     target.classList.add(getTurnMark(state));
   }
 });
 
-document.querySelector('.restart').addEventListener('click', () => {
+restart.addEventListener('click', () => {
   sendMessage({ restart: true });
-  document.querySelector('.game-over').classList.remove('visible');
-  document.querySelectorAll('.grid-cell').forEach((cell) => {
-    cell.classList.remove('disabled', XClass, OClass);
+  gameOver.classList.remove('visible');
+  gridCells.forEach((cell) => {
+    cell.classList.remove(DisabledClass, XClass, OClass, WinnerClass);
+  });
+  player.forEach((cell) => {
+    cell.classList.remove(DisabledClass, WinnerClass, TurnClass);
   });
 });

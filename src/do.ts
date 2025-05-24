@@ -7,13 +7,11 @@ type StateEntry = {
 
 type CellValue = number | Mark;
 
-type Player = boolean;
-
 type Board = CellValue[][];
 
 type Coordinates = number[];
 
-type State = {
+export type State = {
   board: Board;
   turn: Player; // Who's turn is it?
   started: boolean; // did game start?
@@ -25,11 +23,13 @@ type State = {
 };
 
 // configuration settings
-const STREAMER: Player = true;
-const CHAT: Player = false;
+export enum Player {
+  STREAMER = 'streamer',
+  CHAT = 'chat',
+}
 
 // values of the state object
-enum Mark {
+export enum Mark {
   X = 'X',
   O = 'O',
 }
@@ -94,21 +94,21 @@ export class TicTacToeDO extends DurableObject<Env> {
         [0, 0, 0],
         [0, 0, 0],
       ],
-      turn: STREAMER, // Who's turn is it? true = streamer, false = chat
+      turn: Player.STREAMER, // Who's turn is it? true = streamer, false = chat
       started: false,
       winner: null, // who is the winner: true = streamer, false = chat, null = draw or unknown
       gameOver: false, // Is the game over?
 
       // these are config options
-      first: STREAMER, // First move: true = streamer, false = chat
-      streamerMark: Mark.X, // Which mark streamer uses? true = X, false = O
+      first: Player.STREAMER, // First move: true = streamer, false = chat
+      streamerMark: Mark.O, // Which mark streamer uses? true = X, false = O
       winnerCoordinates: [],
     };
 
-    if (emptyState.first === STREAMER) {
-      emptyState.turn = STREAMER;
+    if (emptyState.first === Player.STREAMER) {
+      emptyState.turn = Player.STREAMER;
     } else {
-      emptyState.turn = CHAT;
+      emptyState.turn = Player.CHAT;
     }
 
     return emptyState;
@@ -154,6 +154,11 @@ export class TicTacToeDO extends DurableObject<Env> {
     });
   }
 
+  async getState(): Promise<State> {
+    // return the current state
+    return this.state;
+  }
+
   async webSocketMessage(ws: WebSocket, messageString: ArrayBuffer | string) {
     console.log('got a message:', messageString);
 
@@ -183,7 +188,7 @@ export class TicTacToeDO extends DurableObject<Env> {
 
         // figure out who is the player and which mark to use
         let mark: Mark;
-        if (this.state.turn === STREAMER) {
+        if (this.state.turn === Player.STREAMER) {
           // streamer made a move
           mark = this.state.streamerMark;
         } else {
@@ -201,7 +206,11 @@ export class TicTacToeDO extends DurableObject<Env> {
         this.state.board[x][y] = mark;
 
         // let the other side make a move next
-        this.state.turn = !this.state.turn;
+        if (this.state.turn === Player.STREAMER) {
+          this.state.turn = Player.CHAT;
+        } else {
+          this.state.turn = Player.STREAMER;
+        }
 
         // check if the game is over
         let over = false;
@@ -245,9 +254,9 @@ export class TicTacToeDO extends DurableObject<Env> {
 
         if (winnerMark !== null) {
           if (winnerMark === this.state.streamerMark) {
-            this.state.winner = STREAMER;
+            this.state.winner = Player.STREAMER;
           } else {
-            this.state.winner = CHAT;
+            this.state.winner = Player.CHAT;
           }
         }
 
