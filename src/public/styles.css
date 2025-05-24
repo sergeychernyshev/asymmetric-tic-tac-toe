@@ -2,6 +2,7 @@ main {
   display: flex;
   justify-content: center;
   align-items: center;
+  flex-direction: column;
 }
 
 h1 {
@@ -160,7 +161,7 @@ form {
 }
 
 .sync {
-  display: none;
+  padding: 1em;
 }
 
 .visible {
@@ -170,4 +171,9 @@ form {
 .restart {
   font-size: 1.5em;
   padding: 0.5em;
+}
+
+.sync.hide {
+  opacity: 0;
+  transition: opacity 1.5s cubic-bezier(0.64, 0, 0.78, 0);
 }

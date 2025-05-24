@@ -13,6 +13,7 @@ const TurnClass = 'turn';
 const WinnerClass = 'winner';
 const DisabledClass = 'disabled';
 const VisibleClass = 'visible';
+const HideClass = 'hide';
 
 // DOM elements
 const favicon = document.querySelector("link[rel='icon']");
@@ -94,7 +95,7 @@ function join() {
     // Convert the server's 2D board to our game format
     updateGameFromstate(state);
     disableUI = false;
-    sync.classList.remove(VisibleClass);
+    sync.classList.add(HideClass);
   });
 
   ws.addEventListener('close', (event) => {
@@ -181,7 +182,7 @@ function updateGameFromstate(state) {
 
 board.addEventListener('click', (e) => {
   if (disableUI) {
-    sync.classList.add(VisibleClass);
+    sync.classList.remove(HideClass);
     return;
   }
 
