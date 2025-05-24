@@ -101,7 +101,7 @@ export class TicTacToeDO extends DurableObject<Env> {
 
       // these are config options
       first: Player.STREAMER, // First move: true = streamer, false = chat
-      streamerMark: Mark.O, // Which mark streamer uses? true = X, false = O
+      streamerMark: Mark.X, // Which mark streamer uses? true = X, false = O
       winnerCoordinates: [],
     };
 
