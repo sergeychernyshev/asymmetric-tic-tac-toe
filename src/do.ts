@@ -1,42 +1,44 @@
 import { DurableObject } from 'cloudflare:workers';
-
-// Type that helps with retrieving JSON data from SQLite
-type StateEntry = {
-  json: string;
-};
-
-type CellValue = number | Mark;
-
-type Board = CellValue[][];
-
-type Coordinates = number[];
-
-export type State = {
-  board: Board;
-  turn: Player; // Who's turn is it?
-  started: boolean; // did game start?
-  winner: Player | null; // who is the winner
-  gameOver: boolean; // Is the game over?
-  first: Player; // First move
-  streamerMark: Mark; // Which mark streamer uses?
-  winnerCoordinates: Coordinates[]; // array of coordinate pairs
-};
+import { z } from 'zod';
 
 // configuration settings
 export enum Player {
   STREAMER = 'streamer',
   CHAT = 'chat',
 }
+const PlayerSchema = z.nativeEnum(Player);
 
 // values of the state object
 export enum Mark {
   X = 'X',
   O = 'O',
 }
+const MarkSchema = z.nativeEnum(Mark);
+
+const CellValueSchema = z.union([z.number(), MarkSchema]);
+type CellValue = z.infer<typeof CellValueSchema>;
+
+const BoardSchema = z.array(z.array(CellValueSchema));
+type Board = z.infer<typeof BoardSchema>;
+
+const CoordinatesSchema = z.array(z.number());
+type Coordinates = z.infer<typeof CoordinatesSchema>;
+
+const StateSchema = z.object({
+  board: BoardSchema,
+  turn: PlayerSchema, // Who's turn is it?
+  started: z.boolean(), // did game start?
+  winner: PlayerSchema.nullable(), // who is the winner
+  gameOver: z.boolean(), // Is the game over?
+  first: PlayerSchema, // First move
+  streamerMark: MarkSchema, // Which mark streamer uses?
+  winnerCoordinates: z.array(CoordinatesSchema), // array of coordinate pairs
+});
+export type State = z.infer<typeof StateSchema>;
 
 /** A Durable Object's behavior is defined in an exported Javascript class */
 export class TicTacToeDO extends DurableObject<Env> {
-  sql: SqlStorage;
+  storage: DurableObjectStorage;
   state: State;
 
   /**
@@ -48,43 +50,42 @@ export class TicTacToeDO extends DurableObject<Env> {
    */
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
-    this.sql = ctx.storage.sql;
 
-    // table to hold a single entry in JSON format
-    this.sql.exec(`
-        CREATE TABLE IF NOT EXISTS state (
-          json TEXT
-        );
-      `);
-
+    this.storage = ctx.storage;
     this.state = this.getEmptyState();
 
-    // load the state from the database or create a new one
-    if (!this.loadState()) {
-      this.initState();
-    }
+    this.ctx.blockConcurrencyWhile(async () => {
+      // load the state from the database or create a new one
+      if (!(await this.loadState())) {
+        await this.initState();
+      }
+    });
   }
 
-  private saveState() {
-    this.sql.exec('UPDATE state SET json = ?', JSON.stringify(this.state));
+  private async saveState() {
+    await this.storage.put('state', this.state);
   }
 
-  private initState() {
+  private async initState() {
+    console.log('!!! invalidating state, cleaning up and creating a new one !!!');
+
     // delete any corrupted, unparse-able state if there was any
-    this.sql.exec('DELETE FROM state');
+    await this.storage.delete('state');
 
     // create a single row in the table
-    this.sql.exec('INSERT INTO state (json) VALUES (?)', JSON.stringify(this.state));
+    await this.storage.put('state', this.state);
   }
 
-  private loadState() {
+  private async loadState(): Promise<boolean> {
     try {
-      const result = this.sql.exec<StateEntry>('SELECT json FROM state LIMIT 1').one();
-      this.state = JSON.parse(result.json);
-      return true;
-    } catch (err) {
-      return false;
-    }
+      const result: State = StateSchema.parse(await this.storage.get('state'));
+      if (typeof result !== 'undefined') {
+        this.state = result;
+        return true;
+      }
+    } catch (err) {}
+
+    return false;
   }
 
   private getEmptyState(): State {
@@ -159,6 +160,10 @@ export class TicTacToeDO extends DurableObject<Env> {
     return this.state;
   }
 
+  async checkToken(token: string): Promise<boolean> {
+    return true; // TODO: implement token check
+  }
+
   async webSocketMessage(ws: WebSocket, messageString: ArrayBuffer | string) {
     if (typeof messageString === 'string') {
       const message = JSON.parse(messageString);
@@ -166,7 +171,7 @@ export class TicTacToeDO extends DurableObject<Env> {
       // restart the game
       if (message.restart) {
         this.state = this.getEmptyState();
-        this.saveState();
+        await this.saveState();
 
         this.broadcaseState();
       }
@@ -265,7 +270,7 @@ export class TicTacToeDO extends DurableObject<Env> {
 
         this.state.gameOver = over;
 
-        this.saveState();
+        await this.saveState();
 
         this.broadcaseState();
       }
