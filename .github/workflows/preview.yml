@@ -9,7 +9,8 @@ jobs:
     # needs: test
     steps:
       - uses: actions/checkout@v4
-      - name: Build & Deploy Worker
+      - name: Build & Upload a Worker Version
+        id: upload
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -18,5 +19,5 @@ jobs:
           command: versions upload
       - name: print deployment-url
         env:
-          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          DEPLOYMENT_URL: ${{ steps.upload.outputs.deployment-url }}
         run: echo $DEPLOYMENT_URL
