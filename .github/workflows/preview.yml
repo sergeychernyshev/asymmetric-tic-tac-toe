@@ -18,6 +18,4 @@ jobs:
           wranglerVersion: '4.15.2'
           command: versions upload
       - name: print deployment-url
-        env:
-          DEPLOYMENT_ALIAS_URL: ${{ steps.upload.outputs.pages-deployment-alias-url }}
-        run: echo $DEPLOYMENT_ALIAS_URL
+        run: echo ${{ steps.upload.outputs.pages-deployment-alias-url }}
