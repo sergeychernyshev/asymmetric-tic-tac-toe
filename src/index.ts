@@ -27,12 +27,13 @@ export default {
     // The Durable Object constructor will be invoked upon the first call for a given id
     let stub: DurableObjectStub<TicTacToeDO> = env.TIC_TAC_TOE_DO.get(id);
 
-    if (requestPath.endsWith('/')) {
-      const token = url.searchParams.get('token');
-      if (token && !(await stub.checkToken(token))) {
-        return new Response('Invalid token', { status: 403 });
-      }
+    // if tocken is provided, check if it is valid
+    const token = url.searchParams.get('token');
+    if (token !== null && !(await stub.checkToken(token))) {
+      return new Response('Invalid token', { status: 403 });
+    }
 
+    if (requestPath.endsWith('/')) {
       let headers = new Headers();
       headers.set('Content-type', 'text/html; charset=utf-8');
       headers.set('Cache-control', 'no-store');

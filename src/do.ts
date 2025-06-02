@@ -24,6 +24,9 @@ type Board = z.infer<typeof BoardSchema>;
 const CoordinatesSchema = z.array(z.number());
 type Coordinates = z.infer<typeof CoordinatesSchema>;
 
+const TokenHashSchema = z.instanceof(ArrayBuffer);
+type TokenHash = z.infer<typeof TokenHashSchema>;
+
 const StateSchema = z.object({
   board: BoardSchema,
   turn: PlayerSchema, // Who's turn is it?
@@ -160,11 +163,56 @@ export class TicTacToeDO extends DurableObject<Env> {
     return this.state;
   }
 
+  private async hashToken(token: string): Promise<ArrayBuffer> {
+    return await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  }
+
+  private async verifyToken(token: string, storedHash: ArrayBuffer): Promise<boolean> {
+    const tokenHash = await this.hashToken(token);
+
+    // compare the hashes and return true if they match
+    if (tokenHash.byteLength !== storedHash.byteLength) {
+      return false; // hashes are not the same length, so they cannot match
+    }
+
+    const tokenHashBytes = new Uint8Array(tokenHash);
+    const storedHashBytes = new Uint8Array(storedHash);
+
+    for (let i = 0; i < tokenHashBytes.length; i++) {
+      if (tokenHashBytes[i] !== storedHashBytes[i]) {
+        return false; // hashes do not match
+      }
+    }
+
+    return true; // hashes match
+  }
+
   async checkToken(token: string): Promise<boolean> {
-    return true; // TODO: implement token check
+    // read the token from storage
+    // if it does not exist, create it, otherwise check if they match
+    // don't store the tocken itself, but rather a hash of it
+    if (!token || token.length === 0) {
+      return false; // invalid token
+    }
+
+    let storedHash: TokenHash | undefined = undefined;
+    try {
+      storedHash = TokenHashSchema.parse(await this.storage.get('tokenHash'));
+    } catch (err) {}
+
+    if (!storedHash) {
+      // create a new hash and store it
+      const newHash: ArrayBuffer = await this.hashToken(token);
+      await this.storage.put('tokenHash', newHash);
+      return true;
+    }
+
+    return await this.verifyToken(token, storedHash);
   }
 
   async webSocketMessage(ws: WebSocket, messageString: ArrayBuffer | string) {
+    console.log('ws', ws);
+
     if (typeof messageString === 'string') {
       const message = JSON.parse(messageString);
 
