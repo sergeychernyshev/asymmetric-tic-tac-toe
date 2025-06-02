@@ -19,5 +19,5 @@ jobs:
           command: versions upload
       - name: print deployment-url
         env:
-          DEPLOYMENT_URL: ${{ steps.upload.outputs.deployment-url }}
-        run: echo $DEPLOYMENT_URL
+          DEPLOYMENT_ALIAS_URL: ${{ steps.upload.outputs.pages-deployment-alias-url }}
+        run: echo $DEPLOYMENT_ALIAS_URL
