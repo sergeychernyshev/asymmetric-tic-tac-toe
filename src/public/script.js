@@ -11,7 +11,6 @@ const XClass = 'x';
 const OClass = 'o';
 const TurnClass = 'turn';
 const WinnerClass = 'winner';
-const DisabledClass = 'disabled';
 const VisibleClass = 'visible';
 const HideClass = 'hide';
 
@@ -140,7 +139,8 @@ function updateGameFromstate(state) {
 
   // Clear UI
   gridCells.forEach((cell) => {
-    cell.classList.remove(DisabledClass, XClass, OClass, WinnerClass);
+    cell.classList.remove(XClass, OClass, WinnerClass);
+    cell.disabled = false;
   });
 
   // Update from server's board state In server: 0=empty, 1=X, 2=O
@@ -150,17 +150,20 @@ function updateGameFromstate(state) {
       const cellState = state.board[row][col];
 
       if (cellState === XMark) {
-        gridCells[cellIndex].classList.add(DisabledClass, XClass);
+        gridCells[cellIndex].classList.add(XClass);
+        gridCells[cellIndex].disabled = true;
       } else if (cellState === OMark) {
-        gridCells[cellIndex].classList.add(DisabledClass, OClass);
+        gridCells[cellIndex].classList.add(OClass);
+        gridCells[cellIndex].disabled = true;
       }
     }
   }
 
   // Update turn
   if (state.gameOver) {
-    gridCells.forEach((cell) => cell.classList.add(DisabledClass));
+    gridCells.forEach((cell) => (cell.disabled = true));
     gameOver.classList.add(VisibleClass);
+    restart.focus();
 
     if (state.winner === STREAMER) {
       streamer.classList.add(WinnerClass);
@@ -188,16 +191,15 @@ board.addEventListener('click', (e) => {
 
   const target = event.target;
   const isCell = target.classList.contains('grid-cell');
-  const isDisabled = target.classList.contains(DisabledClass);
 
-  if (isCell && !isDisabled && currentWebSocket !== null) {
+  if (isCell && currentWebSocket !== null) {
     const cellValueX = Number.parseInt(target.dataset.x);
     const cellValueY = Number.parseInt(target.dataset.y);
     disableUI = true;
     sendMessage({ move: [cellValueX, cellValueY] });
 
     // The player clicked on a cell that is still empty
-    target.classList.add(DisabledClass);
+    target.disabled = true;
     target.classList.add(getTurnMark(state) === XMark ? XClass : OClass);
 
     player.forEach((cell) => {
@@ -210,9 +212,10 @@ restart.addEventListener('click', () => {
   sendMessage({ restart: true });
   gameOver.classList.remove(VisibleClass);
   gridCells.forEach((cell) => {
-    cell.classList.remove(DisabledClass, XClass, OClass, WinnerClass);
+    cell.classList.remove(XClass, OClass, WinnerClass);
+    cell.disabled = false;
   });
   player.forEach((cell) => {
-    cell.classList.remove(DisabledClass, WinnerClass, TurnClass);
+    cell.classList.remove(WinnerClass, TurnClass);
   });
 });
