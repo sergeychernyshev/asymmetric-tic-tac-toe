@@ -77,7 +77,7 @@ h1 {
   cursor: pointer;
 }
 
-.grid-cell.disabled {
+.grid-cell[disabled] {
   cursor: not-allowed;
   background-color: #ededed;
 }
