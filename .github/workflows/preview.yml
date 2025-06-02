@@ -6,7 +6,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    # needs: test
+    outputs:
+      deployment-url: ${{ steps.upload.outputs.deployment-url }}
     steps:
       - uses: actions/checkout@v4
       - name: Build & Upload a Worker Version
@@ -18,4 +19,4 @@ jobs:
           wranglerVersion: '4.15.2'
           command: versions upload
       - name: print deployment-url
-        run: echo ${{ steps.upload.outputs.pages-deployment-alias-url }}
+        run: echo ${{ steps.upload.outputs.deployment-url }}
