@@ -16,5 +16,8 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: '4.15.2'
           command: versions upload
+  print:
+    runs-on: ubuntu-latest
+    steps:
       - name: print preview url
         run: echo ${{ steps.deploy.outputs.pages-deployment-alias-url }}
