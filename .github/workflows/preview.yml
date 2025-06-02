@@ -16,10 +16,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           wranglerVersion: '4.15.2'
           command: versions upload
-  print:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Print Header
-        run: echo "Preview URL for the Worker" >> $GITHUB_STEP_SUMMARY
-      - name: Print Preview URL
-        run: echo ${{ steps.deploy.outputs.pages-deployment-alias-url }} >> $GITHUB_STEP_SUMMARY
+      - name: print deployment-url
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: echo $DEPLOYMENT_URL
