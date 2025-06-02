@@ -1,7 +1,7 @@
 name: Deploy A Preview Version Worker
 on:
   pull_request:
-    types: [opened, reopened]
+    types: [opened, reopened, synchronize]
 jobs:
   deploy:
     runs-on: ubuntu-latest
