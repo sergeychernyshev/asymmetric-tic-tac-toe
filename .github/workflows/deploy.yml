@@ -17,6 +17,6 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          wranglerVersion: '4.15.2'
+          wranglerVersion: '4.18.0'
       - name: print deployment-url
         run: echo "Deployed to:" ${{ steps.deploy.outputs.deployment-url }} >> $GITHUB_STEP_SUMMARY
