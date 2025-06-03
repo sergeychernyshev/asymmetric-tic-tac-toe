@@ -27,15 +27,20 @@ type Coordinates = z.infer<typeof CoordinatesSchema>;
 const TokenHashSchema = z.instanceof(ArrayBuffer);
 type TokenHash = z.infer<typeof TokenHashSchema>;
 
+const SettingsSchema = z.object({
+  first: PlayerSchema, // First move: true = streamer, false = chat
+  streamerMark: MarkSchema, // Which mark streamer uses? true = X, false = O
+});
+type Settings = z.infer<typeof SettingsSchema>;
+
 const StateSchema = z.object({
   board: BoardSchema,
   turn: PlayerSchema, // Who's turn is it?
   started: z.boolean(), // did game start?
   winner: PlayerSchema.nullable(), // who is the winner
   gameOver: z.boolean(), // Is the game over?
-  first: PlayerSchema, // First move
-  streamerMark: MarkSchema, // Which mark streamer uses?
   winnerCoordinates: z.array(CoordinatesSchema), // array of coordinate pairs
+  settings: SettingsSchema, // game settings
 });
 export type State = z.infer<typeof StateSchema>;
 
@@ -92,7 +97,7 @@ export class TicTacToeDO extends DurableObject<Env> {
   }
 
   private getEmptyState(): State {
-    const emptyState = {
+    const emptyState: State = {
       board: [
         [0, 0, 0],
         [0, 0, 0],
@@ -102,14 +107,16 @@ export class TicTacToeDO extends DurableObject<Env> {
       started: false,
       winner: null, // who is the winner: true = streamer, false = chat, null = draw or unknown
       gameOver: false, // Is the game over?
+      winnerCoordinates: [], // array of coordinate pairs that make up the winning line
 
       // these are config options
-      first: Player.STREAMER, // First move: true = streamer, false = chat
-      streamerMark: Mark.X, // Which mark streamer uses? true = X, false = O
-      winnerCoordinates: [],
+      settings: {
+        first: Player.STREAMER, // First move: true = streamer, false = chat
+        streamerMark: Mark.X, // Which mark streamer uses? true = X, false = O
+      },
     };
 
-    if (emptyState.first === Player.STREAMER) {
+    if (emptyState.settings.first === Player.STREAMER) {
       emptyState.turn = Player.STREAMER;
     } else {
       emptyState.turn = Player.CHAT;
@@ -237,10 +244,10 @@ export class TicTacToeDO extends DurableObject<Env> {
         let mark: Mark;
         if (this.state.turn === Player.STREAMER) {
           // streamer made a move
-          mark = this.state.streamerMark;
+          mark = this.state.settings.streamerMark;
         } else {
           // chat made a move
-          mark = this.state.streamerMark === Mark.X ? Mark.O : Mark.X;
+          mark = this.state.settings.streamerMark === Mark.X ? Mark.O : Mark.X;
         }
 
         // ignore invalide moves
@@ -300,7 +307,7 @@ export class TicTacToeDO extends DurableObject<Env> {
         }
 
         if (winnerMark !== null) {
-          if (winnerMark === this.state.streamerMark) {
+          if (winnerMark === this.state.settings.streamerMark) {
             this.state.winner = Player.STREAMER;
           } else {
             this.state.winner = Player.CHAT;
