@@ -8,6 +8,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2025-03-03",
   "account_id": "724e55bcae2b4d037e3e85b1a4716da1", // Sergey's Personal Account
+  "preview_urls": true,
   "migrations": [
     {
       "tag": "v1",

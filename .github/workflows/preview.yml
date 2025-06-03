@@ -19,4 +19,4 @@ jobs:
           wranglerVersion: '4.15.2'
           command: versions upload
       - name: print deployment-url
-        run: echo "Deployed to:" ${{ steps.upload.outputs.deployment-url }} >> $GITHUB_STEP_SUMMARY
+        run: echo ${{ steps.upload.outputs.deployment-url }}

@@ -1,5 +1,5 @@
 import pageTemplate from './index.html';
-import { Mark, Player } from './do';
+import { Mark, Player, State, TicTacToeDO } from './do';
 
 export { TicTacToeDO } from './do';
 
@@ -12,7 +12,7 @@ export default {
    * @param ctx - The execution context of the Worker
    * @returns The response to be sent back to the client
    */
-  async fetch(request, env, ctx): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const requestPath = url.pathname;
 
@@ -25,7 +25,13 @@ export default {
 
     // This stub creates a communication channel with the Durable Object instance
     // The Durable Object constructor will be invoked upon the first call for a given id
-    let stub = env.TIC_TAC_TOE_DO.get(id);
+    let stub: DurableObjectStub<TicTacToeDO> = env.TIC_TAC_TOE_DO.get(id);
+
+    // if tocken is provided, check if it is valid
+    const token = url.searchParams.get('token');
+    if (token !== null && !(await stub.checkToken(token))) {
+      return new Response('Invalid token', { status: 403 });
+    }
 
     if (requestPath.endsWith('/')) {
       let headers = new Headers();
@@ -33,7 +39,7 @@ export default {
       headers.set('Cache-control', 'no-store');
 
       // reading state to populate HTML on the server-side
-      const state = await stub.getState();
+      const state: State = await stub.getState();
 
       let page = new TextDecoder().decode(pageTemplate);
 
