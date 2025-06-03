@@ -48,7 +48,7 @@ export default {
 
       // favicon
       let favicon = '/x-favicon.png';
-      if (state.streamerMark === Mark.X) {
+      if (state.settings.streamerMark === Mark.X) {
         if (state.turn === Player.STREAMER) {
           favicon = '/x-favicon.png';
         } else {
@@ -65,11 +65,11 @@ export default {
 
       // current player and their mark
       if (state.turn === Player.STREAMER) {
-        page = page.replace(/{{streamerTurn}}/g, state.streamerMark === Mark.X ? 'x turn' : 'o turn');
-        page = page.replace(/{{chatTurn}}/g, state.streamerMark === Mark.X ? 'o' : 'x');
+        page = page.replace(/{{streamerTurn}}/g, state.settings.streamerMark === Mark.X ? 'x turn' : 'o turn');
+        page = page.replace(/{{chatTurn}}/g, state.settings.streamerMark === Mark.X ? 'o' : 'x');
       } else {
-        page = page.replace(/{{streamerTurn}}/g, state.streamerMark === Mark.X ? 'x' : 'o');
-        page = page.replace(/{{chatTurn}}/g, state.streamerMark === Mark.X ? 'o turn' : 'x turn');
+        page = page.replace(/{{streamerTurn}}/g, state.settings.streamerMark === Mark.X ? 'x' : 'o');
+        page = page.replace(/{{chatTurn}}/g, state.settings.streamerMark === Mark.X ? 'o turn' : 'x turn');
       }
 
       // board state
