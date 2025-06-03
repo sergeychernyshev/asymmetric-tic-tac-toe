@@ -30,11 +30,11 @@ const sync = document.querySelector('.sync');
 let disableUI = false;
 
 function getTurnMark(state) {
-  if (state.streamerMark === XMark) {
+  if (state.settings.streamerMark === XMark) {
     return state.turn === STREAMER ? XMark : OMark;
   }
 
-  if (state.streamerMark === OMark) {
+  if (state.settings.streamerMark === OMark) {
     return state.turn === CHAT ? XMark : OMark;
   }
 }
@@ -117,7 +117,7 @@ function updateGameFromstate(state) {
   streamer.classList.remove(XClass, OClass, TurnClass);
   chat.classList.remove(XClass, OClass, TurnClass);
 
-  if (state.streamerMark === XMark) {
+  if (state.settings.streamerMark === XMark) {
     streamer.classList.add(XClass);
     chat.classList.add(OClass);
   } else {
