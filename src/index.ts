@@ -1,4 +1,4 @@
-import pageTemplate from './index.html';
+import pageTemplate from './game.html';
 import { Mark, Player, State, TicTacToeDO } from './do';
 
 export { TicTacToeDO } from './do';
@@ -33,7 +33,7 @@ export default {
       return new Response('Invalid token', { status: 403 });
     }
 
-    if (requestPath.endsWith('/')) {
+    if (gameID && requestPath.endsWith('/game')) {
       let headers = new Headers();
       headers.set('Content-type', 'text/html; charset=utf-8');
       headers.set('Cache-control', 'no-store');
