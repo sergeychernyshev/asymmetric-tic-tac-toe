@@ -1,8 +1,14 @@
+body {
+  font-family: Verdana, Geneva, sans-serif;
+}
+
 main {
   display: flex;
   justify-content: center;
-  align-items: center;
-  flex-direction: column;
+  align-items: start;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 1em;
 }
 
 h1 {
@@ -156,16 +162,74 @@ form {
   gap: 0.5em;
 }
 
-.game-over {
-  display: none;
-}
-
 .sync {
   padding: 1em;
 }
 
+.settings {
+  display: none;
+  flex-direction: column;
+  padding: 1em;
+  border: 1px solid black;
+  border-radius: 0.3em;
+  background-color: white;
+}
+
+.settings h2 {
+  margin-top: 0.5em;
+  margin-bottom: 0.2em;
+}
+
+.settings form {
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.settings label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+
+.settings fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.settings fieldset legend {
+  margin-bottom: 0.3em;
+}
+
+.settings .radio-group {
+  display: flex;
+  gap: 0.5em;
+  flex-direction: row;
+  margin-top: 0.4em;
+}
+
+.settings .radio-group label {
+  align-items: center;
+  flex-direction: row;
+  border: 1px solid black;
+  padding: 0.5em;
+  border-radius: 0.3em;
+  cursor: pointer;
+  flex: 1;
+  justify-content: center;
+}
+
+.settings .radio-group.small label {
+  padding-right: 1em;
+}
+
+.settings input[type='number'] {
+  font-size: 1em;
+  padding: 0.3em;
+  text-align: center;
+}
+
 .visible {
-  display: block;
+  display: flex;
 }
 
 .restart {
@@ -176,8 +240,4 @@ form {
 .sync.hide {
   opacity: 0;
   transition: opacity 1s cubic-bezier(0.64, 0, 0.78, 0);
-}
-
-.settings {
-  display: none;
 }
