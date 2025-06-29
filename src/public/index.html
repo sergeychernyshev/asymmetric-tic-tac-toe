@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tic-Tac-Toe</title>
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <link rel="icon" href="/x-favicon.png" />
+    <link rel="apple-touch-icon" href="/x-favicon.png" />
+</head>
+
+<body>
+      <section class="start-game">
+        <button class="start-button">Start Your Game</button>
+      </section>
+
+      <script>
+        document.querySelector('.start-button').addEventListener('click', () => {
+            document.location.href = `/game?game=${self.crypto.randomUUID()}&token=${self.crypto.randomUUID()}`;
+        })
+      </script>
+</body>
+</html>
