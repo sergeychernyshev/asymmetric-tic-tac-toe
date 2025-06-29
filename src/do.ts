@@ -44,7 +44,6 @@ const StateSchema = z.object({
   gameOver: z.boolean(), // Is the game over?
   winnerCoordinates: z.array(CoordinatesSchema), // array of coordinate pairs
   settings: SettingsSchema, // game settings
-  authorized: z.boolean(), // is the user authorized owner of the game?
 });
 export type State = z.infer<typeof StateSchema>;
 
@@ -124,7 +123,6 @@ export class TicTacToeDO extends DurableObject<Env> {
       gameOver: false, // Is the game over?
       winnerCoordinates: [], // array of coordinate pairs that make up the winning line
       settings: this.settings,
-      authorized: true, // is streamer logged in @TODO replace with socket authentication
     };
 
     if (emptyState.settings.first === Player.STREAMER) {
@@ -147,6 +145,15 @@ export class TicTacToeDO extends DurableObject<Env> {
     const webSocketPair = new WebSocketPair();
     const [client, server] = Object.values(webSocketPair);
 
+    const url = new URL(request.url);
+    const token = url.searchParams.get('token');
+
+    if (token && (await this.checkToken(token))) {
+      // If the token is valid, we can record it as an attachment to the WebSocket.
+      // This will allow us to retrieve it later in the `webSocketMessage()` handler.
+      server.serializeAttachment(token);
+    }
+
     // Calling `acceptWebSocket()` informs the runtime that this WebSocket is to begin terminating
     // request within the Durable Object. It has the effect of "accepting" the connection,
     // and allowing the WebSocket to send and receive messages.
@@ -164,16 +171,21 @@ export class TicTacToeDO extends DurableObject<Env> {
     });
   }
 
-  private broadcaseState() {
+  private broadcastState() {
     // send new state to all connected clients
     const sockets = this.ctx.getWebSockets();
-    sockets.forEach((ws) => {
-      try {
-        ws.send(JSON.stringify(this.state));
-      } catch (err) {
-        console.log('could not send messages to:', ws);
-      }
-    });
+    sockets.forEach((ws) => this.sendState(ws));
+  }
+
+  private sendState(ws: WebSocket) {
+    const token = ws.deserializeAttachment() as string | undefined;
+    const msg = { ...this.state, authorized: !!token };
+
+    try {
+      ws.send(JSON.stringify(msg));
+    } catch (err) {
+      console.log('could not send messages to:', ws);
+    }
   }
 
   async getState(): Promise<State> {
@@ -229,17 +241,24 @@ export class TicTacToeDO extends DurableObject<Env> {
   }
 
   async webSocketMessage(ws: WebSocket, messageString: ArrayBuffer | string) {
-    console.log('ws', ws);
+    const token = ws.deserializeAttachment() as string | undefined;
 
     if (typeof messageString === 'string') {
       const message = JSON.parse(messageString);
+
+      // user connected, let's send this user the current state
+      if (message.connected) {
+        this.sendState(ws);
+        return;
+      }
 
       // restart the game
       if (message.restart) {
         this.state = this.getEmptyState();
         await this.saveState();
 
-        this.broadcaseState();
+        this.broadcastState();
+        return;
       }
 
       if (message.move) {
@@ -338,20 +357,12 @@ export class TicTacToeDO extends DurableObject<Env> {
 
         await this.saveState();
 
-        this.broadcaseState();
+        this.broadcastState();
+        return;
       }
 
-      // user connected, let's send this user the current state
-      if (message.connected) {
-        try {
-          ws.send(JSON.stringify(this.state));
-        } catch (err) {
-          console.log('could not send messages to:', ws);
-        }
-      }
-
-      // save settings
-      if (message.settings) {
+      // save settings only if the user is authorized
+      if (token && message.settings) {
         const settings = SettingsSchema.parse(message.settings);
 
         // if this is the first turn, we need to check if first move setting has changed and update current turn
@@ -386,7 +397,8 @@ export class TicTacToeDO extends DurableObject<Env> {
         this.state.settings = this.settings;
         await this.saveState();
 
-        this.broadcaseState();
+        this.broadcastState();
+        return;
       }
     }
   }

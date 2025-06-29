@@ -91,7 +91,7 @@ function join() {
   // receive a message
   ws.addEventListener('message', (event) => {
     state = JSON.parse(event.data);
-    console.log('Received game state from server:', state);
+    // console.log('Received game state from server:', state);
 
     // Convert the server's 2D board to our game format
     updateGameFromstate(state);
