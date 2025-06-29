@@ -2,6 +2,17 @@ body {
   font-family: Verdana, Geneva, sans-serif;
 }
 
+.start-button, .restart {
+  border-radius: 0.4rem;
+  padding: 0.3rem 1rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.start-button {
+  background-color: rgb(152, 217, 178);
+}
+
 main {
   display: flex;
   justify-content: center;
@@ -127,6 +138,7 @@ h1 {
 .grid-cell.winner {
   background-color: rgb(152, 217, 178);
 }
+
 .player.winner::before {
   opacity: 1;
 }
@@ -196,6 +208,7 @@ form {
   padding: 0;
   margin: 0;
 }
+
 .settings fieldset legend {
   margin-bottom: 0.3em;
 }
@@ -230,11 +243,6 @@ form {
 
 .visible {
   display: flex;
-}
-
-.restart {
-  font-size: 1.5em;
-  padding: 0.5em;
 }
 
 .sync.hide {
