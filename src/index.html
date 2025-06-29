@@ -43,14 +43,53 @@
             <button title="bottom-center square" class="grid-cell {{cell12}}" data-x="1" data-y="2"></button>
             <button title="bottom-right square" class="grid-cell {{cell22}}" data-x="2" data-y="2"></button>
           </div>
-          <div class="game-over">
-            <button class="restart">Restart</button>
-          </div>
         </div>
         <div class="sync hide">Please wait for you turn to sync...</div>
       </section>
       <section class="settings">
+        <button class="restart">Restart Game</button>
+
         <h2>Settings</h2>
+        <form>
+          <fieldset class="radio-group">
+            <legend>First move</legend>
+
+            <label>
+              <input type="radio" name="first-move" value="streamer" {{firstMoveStreamer}} />
+              Streamer
+            </label>
+            <label>
+              <input type="radio" name="first-move" value="chat" {{firstMoveChat}} />
+              Chat
+            </label>
+          </fieldset>
+
+          <fieldset class="radio-group small">
+            <legend>Streamer's mark</legend>
+
+            <label>
+              <input type="radio" name="streamer-mark" value="X" {{streamerMarkX}} />
+              X
+            </label>
+
+            <label>
+              <input type="radio" name="streamer-mark" value="O" {{streamerMarkO}} />
+              O
+            </label>
+          </fieldset>
+
+          <label>
+            Time for chat's turn (sec)
+            <input type="number" name="chat-turn-time" value="{{chatTurnTime}}" />
+          </label>
+
+          <label>
+            Games per round
+            <input type="number" name="games-per-round" value="{{gamesPerRound}}" />
+          </label>
+
+          <button class="save" disabled>Save Settings</button>
+        </form>
       </section>
     </main>
   </body>
