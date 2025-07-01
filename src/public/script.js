@@ -19,22 +19,24 @@ const favicon = document.querySelector("link[rel='icon']");
 const streamer = document.querySelector('.streamer');
 const chat = document.querySelector('.chat');
 const gridCells = document.querySelectorAll('.grid-cell');
-const gameOver = document.querySelector('.game-over');
 const squares = document.querySelectorAll('.square');
 const board = document.querySelector('.game-grid');
 const restart = document.querySelector('.restart');
 const player = document.querySelectorAll('.player');
 const sync = document.querySelector('.sync');
+const settings = document.querySelector('.settings');
+const save = document.querySelector('.save');
+const settingsForm = document.querySelector('.settings form');
 
 // disable UI till next data is received
 let disableUI = false;
 
 function getTurnMark(state) {
-  if (state.streamerMark === XMark) {
+  if (state.settings.streamerMark === XMark) {
     return state.turn === STREAMER ? XMark : OMark;
   }
 
-  if (state.streamerMark === OMark) {
+  if (state.settings.streamerMark === OMark) {
     return state.turn === CHAT ? XMark : OMark;
   }
 }
@@ -89,7 +91,7 @@ function join() {
   // receive a message
   ws.addEventListener('message', (event) => {
     state = JSON.parse(event.data);
-    console.log('Received game state from server:', state);
+    // console.log('Received game state from server:', state);
 
     // Convert the server's 2D board to our game format
     updateGameFromstate(state);
@@ -117,7 +119,7 @@ function updateGameFromstate(state) {
   streamer.classList.remove(XClass, OClass, TurnClass);
   chat.classList.remove(XClass, OClass, TurnClass);
 
-  if (state.streamerMark === XMark) {
+  if (state.settings.streamerMark === XMark) {
     streamer.classList.add(XClass);
     chat.classList.add(OClass);
   } else {
@@ -162,7 +164,7 @@ function updateGameFromstate(state) {
   // Update turn
   if (state.gameOver) {
     gridCells.forEach((cell) => (cell.disabled = true));
-    gameOver.classList.add(VisibleClass);
+    restart.disabled = false;
     restart.focus();
 
     if (state.winner === STREAMER) {
@@ -176,10 +178,17 @@ function updateGameFromstate(state) {
       gridCells[cell[0] * 3 + cell[1]].classList.add(WinnerClass);
     });
   } else {
-    gameOver.classList.remove(VisibleClass);
-
+    restart.disabled = true;
     streamer.classList.remove(WinnerClass);
     chat.classList.remove(WinnerClass);
+  }
+
+  if (state.authorized) {
+    settings.classList.add(VisibleClass);
+
+    new FormData(settingsForm);
+  } else {
+    settings.classList.remove(VisibleClass);
   }
 }
 
@@ -210,7 +219,7 @@ board.addEventListener('click', (e) => {
 
 restart.addEventListener('click', () => {
   sendMessage({ restart: true });
-  gameOver.classList.remove(VisibleClass);
+  restart.disabled = true;
   gridCells.forEach((cell) => {
     cell.classList.remove(XClass, OClass, WinnerClass);
     cell.disabled = false;
@@ -219,3 +228,27 @@ restart.addEventListener('click', () => {
     cell.classList.remove(WinnerClass, TurnClass);
   });
 });
+
+function settingsChaned() {
+  save.disabled = false;
+}
+
+function saveSettings(e) {
+  e.preventDefault();
+
+  const formData = new FormData(settingsForm);
+  const settings = {
+    streamerMark: formData.get('streamer-mark'),
+    first: formData.get('first-move'),
+    gamesPerRound: Number.parseInt(formData.get('games-per-round')),
+    chatTurnTime: Number.parseInt(formData.get('chat-turn-time')),
+  };
+
+  sendMessage({ settings });
+
+  save.disabled = true;
+}
+
+save.addEventListener('click', saveSettings);
+settingsForm.addEventListener('submit', saveSettings);
+settingsForm.addEventListener('change', settingsChaned);

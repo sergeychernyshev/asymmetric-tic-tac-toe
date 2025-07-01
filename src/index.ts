@@ -1,4 +1,4 @@
-import pageTemplate from './index.html';
+import pageTemplate from './game.html';
 import { Mark, Player, State, TicTacToeDO } from './do';
 
 export { TicTacToeDO } from './do';
@@ -33,7 +33,7 @@ export default {
       return new Response('Invalid token', { status: 403 });
     }
 
-    if (requestPath.endsWith('/')) {
+    if (gameID && requestPath.endsWith('/game')) {
       let headers = new Headers();
       headers.set('Content-type', 'text/html; charset=utf-8');
       headers.set('Cache-control', 'no-store');
@@ -48,7 +48,7 @@ export default {
 
       // favicon
       let favicon = '/x-favicon.png';
-      if (state.streamerMark === Mark.X) {
+      if (state.settings.streamerMark === Mark.X) {
         if (state.turn === Player.STREAMER) {
           favicon = '/x-favicon.png';
         } else {
@@ -65,11 +65,11 @@ export default {
 
       // current player and their mark
       if (state.turn === Player.STREAMER) {
-        page = page.replace(/{{streamerTurn}}/g, state.streamerMark === Mark.X ? 'x turn' : 'o turn');
-        page = page.replace(/{{chatTurn}}/g, state.streamerMark === Mark.X ? 'o' : 'x');
+        page = page.replace(/{{streamerTurn}}/g, state.settings.streamerMark === Mark.X ? 'x turn' : 'o turn');
+        page = page.replace(/{{chatTurn}}/g, state.settings.streamerMark === Mark.X ? 'o' : 'x');
       } else {
-        page = page.replace(/{{streamerTurn}}/g, state.streamerMark === Mark.X ? 'x' : 'o');
-        page = page.replace(/{{chatTurn}}/g, state.streamerMark === Mark.X ? 'o turn' : 'x turn');
+        page = page.replace(/{{streamerTurn}}/g, state.settings.streamerMark === Mark.X ? 'x' : 'o');
+        page = page.replace(/{{chatTurn}}/g, state.settings.streamerMark === Mark.X ? 'o turn' : 'x turn');
       }
 
       // board state
@@ -82,6 +82,17 @@ export default {
       page = page.replace(/{{cell02}}/g, state.board[2][0] === Mark.X ? 'x disabled' : state.board[2][0] === Mark.O ? 'o disabled' : '');
       page = page.replace(/{{cell12}}/g, state.board[2][1] === Mark.X ? 'x disabled' : state.board[2][1] === Mark.O ? 'o disabled' : '');
       page = page.replace(/{{cell22}}/g, state.board[2][2] === Mark.X ? 'x disabled' : state.board[2][2] === Mark.O ? 'o disabled' : '');
+
+      // settings
+      page = page.replace(/{{firstMoveStreamer}}/g, `${state.settings.first === Player.STREAMER ? 'checked' : ''}`);
+      page = page.replace(/{{firstMoveChat}}/g, `${state.settings.first === Player.CHAT ? 'checked' : ''}`);
+
+      page = page.replace(/{{streamerMarkX}}/g, `${state.settings.streamerMark === Mark.X ? 'checked' : ''}`);
+      page = page.replace(/{{streamerMarkO}}/g, `${state.settings.streamerMark === Mark.O ? 'checked' : ''}`);
+
+      page = page.replace(/{{chatTurnTime}}/g, `${state.settings.chatTurnTime}`);
+      page = page.replace(/{{gamesPerRound}}/g, `${state.settings.gamesPerRound}`);
+
       return new Response(page, { headers });
     }
 
