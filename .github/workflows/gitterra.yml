@@ -54,10 +54,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        # This step is included for best practice, though for this specific action,
-        # it's not strictly necessary as we are not reading files from the repo.
       - name: Get GitHub Pages URL and Prepare Comment
         id: prepare-comment
         run: |
