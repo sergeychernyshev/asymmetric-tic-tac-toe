@@ -11,6 +11,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
+  pull-requests: write
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
@@ -44,3 +45,52 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Get GitHub Pages URL and Prepare Comment
+        id: prepare-comment
+        run: |
+          # The owner of the repository, converted to lowercase for consistency with GitHub Pages URLs.
+          # GitHub Pages URLs typically use the lowercase version of the owner's username.
+          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+
+          # The name of the repository, converted to lowercase.
+          # GitHub Pages URLs for project sites (user.github.io/repo-name) require the repo name to be lowercase.
+          REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+
+          # Construct the GitHub Pages URL.
+          # This assumes a standard GitHub Pages setup (e.g., user.github.io/repo-name).
+          # If you have a custom domain, you would need to hardcode it here or fetch it from a secret.
+          GITHUB_PAGES_URL="https://${REPO_OWNER}.github.io/${REPO_NAME}/"
+
+          # Get the Pull Request number from the event payload.
+          PR_NUMBER=${{ github.event.pull_request.number }}
+
+          # Define the comment body.
+          # We use a multi-line string for better readability.
+          COMMENT_BODY="This Pull Request was successfully merged! 🎉
+          You can view the updated GitHub Pages site here: ${GITHUB_PAGES_URL}
+
+          If you don't see the changes immediately, it might take a few minutes for GitHub Pages to deploy."
+
+          # Set outputs that can be used by subsequent steps.
+          # 'comment_body' will contain the full text of the comment.
+          # 'pr_number' will contain the number of the PR to comment on.
+          echo "comment_body<<EOF" >> $GITHUB_OUTPUT
+          echo "${COMMENT_BODY}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+      - name: Add comment to Pull Request
+        uses: actions/github-script@v6
+        with:
+          # The GitHub token is automatically provided by GitHub Actions.
+          # It has the necessary permissions based on the 'permissions' block above.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            # Use the GitHub REST API client provided by 'github-script' action.
+            # 'github.rest.issues.createComment' is used to add a comment to an issue or pull request.
+            # (Pull Requests are a type of issue in GitHub's API).
+            github.rest.issues.createComment({
+              owner: context.repo.owner, # The owner of the repository (e.g., 'your-username')
+              repo: context.repo.repo,   # The name of the repository (e.g., 'your-repo')
+              issue_number: ${{ steps.prepare-comment.outputs.pr_number }}, # The PR number obtained from the previous step
+              body: "${{ steps.prepare-comment.outputs.comment_body }}"      # The comment body obtained from the previous step
+            })
