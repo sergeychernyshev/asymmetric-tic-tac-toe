@@ -66,10 +66,7 @@ jobs:
 
           # Define the comment body.
           # We use a multi-line string for better readability.
-          COMMENT_BODY="This Pull Request was successfully merged! 🎉
-          You can view the updated GitHub Pages site here: ${GITHUB_PAGES_URL}
-
-          If you don't see the changes immediately, it might take a few minutes for GitHub Pages to deploy."
+          COMMENT_BODY="GitTerra map of your world is ready: ${GITHUB_PAGES_URL}"
 
           # Set outputs that can be used by subsequent steps.
           # 'comment_body' will contain the full text of the comment.
