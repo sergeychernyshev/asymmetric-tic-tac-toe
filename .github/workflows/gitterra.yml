@@ -23,12 +23,13 @@ concurrency:
 
 jobs:
   play-gitterra:
+    if: github.event.pull_request.merged == false
     runs-on: ubuntu-latest
     steps:
       - name: Play GitTerra 🎮
         uses: GitTerraGame/Play-GitTerra-Action@main
   deploy-gitterra-to-gh-pages:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event.pull_request.merged == false
     needs: play-gitterra
     environment:
       name: github-pages
@@ -50,7 +51,6 @@ jobs:
   add-comment:
     # This job only runs if the pull request was merged.
     if: github.event.pull_request.merged == true
-    needs: deploy-gitterra-to-gh-pages
     runs-on: ubuntu-latest
 
     steps:
