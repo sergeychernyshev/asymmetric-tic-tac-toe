@@ -1,4 +1,4 @@
-name: Comment on Merged PR with GitHub Pages URL
+name: Add GitTerra URL as a comment on Merged PRs with GitHub Pages URL
 
 # This workflow runs when a pull request is closed.
 on:
