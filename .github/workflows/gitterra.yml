@@ -55,5 +55,5 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { default: addGitterraPRComment } = await import('${{ github.workspace }}/.github/workflows/gitterra-pr-comment.js');
+            const { default: addGitterraPRComment } = await import('${{ github.workspace }}/.github/workflows/gitterra-pr-comment.mjs');
             await addGitterraPRComment({github, context});
