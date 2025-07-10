@@ -134,10 +134,12 @@ jobs:
 
           # Define the comment body.
           # We use a multi-line string for better readability.
-          COMMENT_BODY="
+          COMMENT_BODY=$(cat << EOF
           ![GitTerra Logo](https://gitterra.com/images/logo.png)
           
-          GitTerra map of your world is ready: ${GITHUB_PAGES_URL}"
+          GitTerra map of your world is ready: ${GITHUB_PAGES_URL}
+          EOF
+          )
 
           # Set outputs that can be used by subsequent steps.
           # 'comment_body' will contain the full text of the comment.
