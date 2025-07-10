@@ -125,24 +125,23 @@ jobs:
       - name: Get GitHub Pages URL and Prepare Comment
         id: prepare-comment
         if: steps.find-pr.outputs.pr_number
-        run: |
-          # Get the GitHub Pages URL from the output of the 'get-pages-info' step.
-          GITHUB_PAGES_URL="${{ steps.get-pages-info.outputs.github_pages_url }}"
-
-          # Get the Pull Request number from the output of the 'find-pr' step.
-          PR_NUMBER=${{ steps.find-pr.outputs.pr_number }}
-
-          # Define the comment body.
-          # We use a multi-line string for better readability.
-          COMMENT_BODY="![GitTerra Logo](https://gitterra.com/images/logo.png) GitTerra map of your world is ready: ${GITHUB_PAGES_URL}"
-
-          # Set outputs that can be used by subsequent steps.
-          # 'comment_body' will contain the full text of the comment.
-          # 'pr_number' will contain the number of the PR to comment on.
-          echo "comment_body<<EOF" >> $GITHUB_OUTPUT
-          echo "${COMMENT_BODY}" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "pr_number=${PR_NUMBER}" >> $GITHUB_OUTPUT
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            // Get the GitHub Pages URL from the output of the 'get-pages-info' step.
+            const githubPagesUrl = `${{ steps.get-pages-info.outputs.github_pages_url }}`;
+  
+            // Get the Pull Request number from the output of the 'find-pr' step.
+            const prNumber = `${{ steps.find-pr.outputs.pr_number }}`;
+  
+            // Define the comment body.
+            const commentBody = `![GitTerra Logo](https://gitterra.com/images/logo.png)
+            GitTerra map of your world is ready: ${githubPagesUrl}`;
+  
+            // Set outputs for the comment body and PR number.
+            core.setOutput('comment_body', commentBody);
+            core.setOutput('pr_number', prNumber);
       - name: Add comment to Pull Request
         if: steps.find-pr.outputs.pr_number
         uses: actions/github-script@v7
