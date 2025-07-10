@@ -50,12 +50,6 @@ jobs:
     needs: deploy-gitterra-to-gh-pages
 
     steps:
-      # - name: Checkout repository
-      #   uses: actions/checkout@v4
-      #   with:
-      #     # Fetch the full history to ensure merge commit SHAs are available if needed,
-      #     # although for this specific approach, the pushed SHA is directly used.
-      #     fetch-depth: 0
       - name: Find Merged Pull Request
         id: find-pr
         uses: actions/github-script@v6
@@ -101,22 +95,39 @@ jobs:
             } else {
               console.log('No merged Pull Request found for this push event matching the commit SHA.');
             }
+      - name: Get GitHub Pages Site Information
+        id: get-pages-info
+        if: steps.find-pr.outputs.pr_number
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            let githubPagesUrl = null;
+  
+            try {
+              // Call the GitHub API to get information about the Pages site.
+              const { data: pagesInfo } = await github.rest.repos.getPages({ owner, repo });
+              githubPagesUrl = pagesInfo.html_url;
+              console.log(`GitHub Pages URL fetched: ${githubPagesUrl}`);
+            } catch (error) {
+              console.error(`Failed to get GitHub Pages info: ${error.message}`);
+              // If fetching fails, fall back to constructing the URL manually.
+              // This ensures the action still works even if the API call fails or Pages isn't configured yet.
+              const repoOwnerLower = owner.toLowerCase();
+              const repoNameLower = repo.toLowerCase();
+              githubPagesUrl = `https://${repoOwnerLower}.github.io/${repoNameLower}/`;
+              console.log(`Falling back to constructed URL: ${githubPagesUrl}`);
+            }
+  
+            // Set the output 'github_pages_url' for subsequent steps.
+            core.setOutput('github_pages_url', githubPagesUrl);
       - name: Get GitHub Pages URL and Prepare Comment
         id: prepare-comment
         if: steps.find-pr.outputs.pr_number
         run: |
-          # The owner of the repository, converted to lowercase for consistency with GitHub Pages URLs.
-          # GitHub Pages URLs typically use the lowercase version of the owner's username.
-          REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-
-          # The name of the repository, converted to lowercase.
-          # GitHub Pages URLs for project sites (user.github.io/repo-name) require the repo name to be lowercase.
-          REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
-
-          # Construct the GitHub Pages URL.
-          # This assumes a standard GitHub Pages setup (e.g., user.github.io/repo-name).
-          # If you have a custom domain, you would need to hardcode it here or fetch it from a secret.
-          GITHUB_PAGES_URL="https://${REPO_OWNER}.github.io/${REPO_NAME}/"
+          # Get the GitHub Pages URL from the output of the 'get-pages-info' step.
+          GITHUB_PAGES_URL="${{ steps.get-pages-info.outputs.github_pages_url }}"
 
           # Get the Pull Request number from the output of the 'find-pr' step.
           PR_NUMBER=${{ steps.find-pr.outputs.pr_number }}
