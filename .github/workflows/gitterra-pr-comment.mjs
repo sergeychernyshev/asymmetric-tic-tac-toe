@@ -52,7 +52,7 @@ export default async function addGitterraPRComment({ github, context }) {
   }
 
   // --- Step 3: Prepare Comment ---
-  const commentBody = `![GitTerra Logo](https://gitterra.com/images/logo.png)
+  const commentBody = `[<img src="https://gitterra.com/images/logo.png" height="100"/>](${githubPagesUrl})
             GitTerra map of your world is ready: ${githubPagesUrl}`;
 
   console.log(`Prepared comment for PR #${prNumber}`);
