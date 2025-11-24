@@ -93,6 +93,25 @@ export default {
       page = page.replace(/{{chatTurnTime}}/g, `${state.settings.chatTurnTime}`);
       page = page.replace(/{{gamesPerRound}}/g, `${state.settings.gamesPerRound}`);
 
+      // links
+      const chatUrl = new URL(url.href);
+      chatUrl.searchParams.delete('token');
+      page = page.replace(/{{chatLink}}/g, chatUrl.href);
+
+      const embedUrl = new URL(url.href);
+      embedUrl.searchParams.delete('token');
+      embedUrl.searchParams.set('embed', 'true');
+      page = page.replace(/{{embedLink}}/g, embedUrl.href);
+
+      const streamerUrl = new URL(url.href);
+      page = page.replace(/{{streamerLink}}/g, streamerUrl.href);
+
+      const streamerDisplayUrl = new URL(url.href);
+      if (streamerDisplayUrl.searchParams.has('token')) {
+        streamerDisplayUrl.searchParams.set('token', '*****');
+      }
+      page = page.replace(/{{streamerDisplayLink}}/g, streamerDisplayUrl.href);
+
       // Remove settings and links panels if not authorized
       if (!token) {
         page = page.replace(/<section class="settings">[\s\S]*?<\/section>/g, '');

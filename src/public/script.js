@@ -274,12 +274,12 @@ function updateGameFromstate(state) {
   if (settingsPanel) {
     if (state.authorized) {
       settingsPanel.classList.add(VisibleClass);
-      linksPanel.classList.add(VisibleClass);
+      if (linksPanel) linksPanel.classList.add(VisibleClass);
 
       new FormData(settingsForm);
     } else {
       settingsPanel.classList.remove(VisibleClass);
-      linksPanel.classList.remove(VisibleClass);
+      if (linksPanel) linksPanel.classList.remove(VisibleClass);
     }
   }
 }
