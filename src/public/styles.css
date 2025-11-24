@@ -185,6 +185,7 @@ form {
   border: 1px solid black;
   border-radius: 0.3em;
   background-color: white;
+  max-width: 302px;
 }
 
 .settings h2 {
@@ -251,7 +252,8 @@ form {
   flex-direction: column;
   gap: 0.5em;
   font-size: 0.9em;
-  max-width: 300px;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .links-panel strong {
