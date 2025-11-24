@@ -8,11 +8,22 @@ body {
 }
 
 .start-button,
-.restart {
+.restart,
+.save {
   border-radius: 0.4rem;
   padding: 0.3rem 1rem;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: bold;
+  width: 100%;
+  background-color: #007bff;
+  color: white;
+}
+
+.start-button[disabled],
+.restart[disabled],
+.save[disabled] {
+  background-color: #ededed;
+  color: grey;
 }
 
 .start-button {

@@ -33,7 +33,7 @@ export default {
       return new Response('Invalid token', { status: 403 });
     }
 
-    if (gameID && requestPath.endsWith('/game')) {
+    if (gameID && requestPath.endsWith('/play')) {
       let headers = new Headers();
       headers.set('Content-type', 'text/html; charset=utf-8');
       headers.set('Cache-control', 'no-store');
