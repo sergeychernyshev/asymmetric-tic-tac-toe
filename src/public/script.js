@@ -212,6 +212,9 @@ function updateGameFromstate(state) {
     cell.disabled = false;
   });
 
+  // Determine if empty cells should be disabled for unauthenticated players when it's not their turn
+  const shouldDisableAllEmptyCells = !state.authorized && state.turn === STREAMER;
+
   // Update from server's board state In server: 0=empty, 1=X, 2=O
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
@@ -223,6 +226,8 @@ function updateGameFromstate(state) {
         gridCells[cellIndex].disabled = true;
       } else if (cellState === OMark) {
         gridCells[cellIndex].classList.add(OClass);
+        gridCells[cellIndex].disabled = true;
+      } else if (shouldDisableAllEmptyCells) {
         gridCells[cellIndex].disabled = true;
       }
     }
@@ -265,7 +270,6 @@ if (!isEmbedded) {
   board.addEventListener('click', (e) => {
     // If the user is not authorized and it's not the chat's turn, do nothing.
     if (!state.authorized && state.turn !== CHAT) {
-      sync.classList.remove(HideClass);
       return;
     }
 
