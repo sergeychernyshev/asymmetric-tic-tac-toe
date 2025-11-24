@@ -263,6 +263,12 @@ function updateGameFromstate(state) {
 
 if (!isEmbedded) {
   board.addEventListener('click', (e) => {
+    // If the user is not authorized and it's not the chat's turn, do nothing.
+    if (!state.authorized && state.turn !== CHAT) {
+      sync.classList.remove(HideClass);
+      return;
+    }
+
     if (disableUI) {
       sync.classList.remove(HideClass);
       return;
