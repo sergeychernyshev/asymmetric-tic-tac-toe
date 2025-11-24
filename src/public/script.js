@@ -210,6 +210,12 @@ function updateGameFromstate(state) {
   gridCells.forEach((cell) => {
     cell.classList.remove(XClass, OClass, WinnerClass);
     cell.disabled = false;
+    // Store original title if not already stored
+    if (!cell.hasAttribute('data-original-title')) {
+      cell.setAttribute('data-original-title', cell.title);
+    }
+    // Restore original title when re-enabling
+    cell.title = cell.getAttribute('data-original-title');
   });
 
   // Determine if empty cells should be disabled for unauthenticated players when it's not their turn
@@ -229,6 +235,9 @@ function updateGameFromstate(state) {
         gridCells[cellIndex].disabled = true;
       } else if (shouldDisableAllEmptyCells) {
         gridCells[cellIndex].disabled = true;
+        // Append wait message to tooltip
+        const originalTitle = gridCells[cellIndex].getAttribute('data-original-title');
+        gridCells[cellIndex].title = `${originalTitle} - Wait for opponent's turn`;
       }
     }
   }
