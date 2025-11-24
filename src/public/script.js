@@ -54,6 +54,27 @@ function updateLinks() {
 }
 updateLinks();
 
+document.querySelectorAll('.copy-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.dataset.target;
+    const linkElement = document.getElementById(targetId);
+    if (linkElement) {
+      navigator.clipboard
+        .writeText(linkElement.href)
+        .then(() => {
+          const originalText = btn.textContent;
+          btn.textContent = '✅';
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 2000);
+        })
+        .catch((err) => {
+          console.error('Failed to copy: ', err);
+        });
+    }
+  });
+});
+
 function getTurnMark(state) {
   if (state.settings.streamerMark === XMark) {
     return state.turn === STREAMER ? XMark : OMark;
