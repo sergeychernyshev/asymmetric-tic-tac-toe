@@ -261,42 +261,44 @@ function updateGameFromstate(state) {
   }
 }
 
-board.addEventListener('click', (e) => {
-  if (disableUI || isEmbedded) {
-    sync.classList.remove(HideClass);
-    return;
-  }
+if (!isEmbedded) {
+  board.addEventListener('click', (e) => {
+    if (disableUI) {
+      sync.classList.remove(HideClass);
+      return;
+    }
 
-  const target = event.target;
-  const isCell = target.classList.contains('grid-cell');
+    const target = event.target;
+    const isCell = target.classList.contains('grid-cell');
 
-  if (isCell && currentWebSocket !== null) {
-    const cellValueX = Number.parseInt(target.dataset.x);
-    const cellValueY = Number.parseInt(target.dataset.y);
-    disableUI = true;
-    sendMessage({ move: [cellValueX, cellValueY] });
+    if (isCell && currentWebSocket !== null) {
+      const cellValueX = Number.parseInt(target.dataset.x);
+      const cellValueY = Number.parseInt(target.dataset.y);
+      disableUI = true;
+      sendMessage({ move: [cellValueX, cellValueY] });
 
-    // The player clicked on a cell that is still empty
-    target.disabled = true;
-    target.classList.add(getTurnMark(state) === XMark ? XClass : OClass);
+      // The player clicked on a cell that is still empty
+      target.disabled = true;
+      target.classList.add(getTurnMark(state) === XMark ? XClass : OClass);
 
-    player.forEach((cell) => {
-      cell.classList.remove(TurnClass);
+      player.forEach((cell) => {
+        cell.classList.remove(TurnClass);
+      });
+    }
+  });
+
+  restart.addEventListener('click', () => {
+    sendMessage({ restart: true });
+    restart.disabled = true;
+    gridCells.forEach((cell) => {
+      cell.classList.remove(XClass, OClass, WinnerClass);
+      cell.disabled = false;
     });
-  }
-});
-
-restart.addEventListener('click', () => {
-  sendMessage({ restart: true });
-  restart.disabled = true;
-  gridCells.forEach((cell) => {
-    cell.classList.remove(XClass, OClass, WinnerClass);
-    cell.disabled = false;
+    player.forEach((cell) => {
+      cell.classList.remove(WinnerClass, TurnClass);
+    });
   });
-  player.forEach((cell) => {
-    cell.classList.remove(WinnerClass, TurnClass);
-  });
-});
+}
 
 function settingsChaned() {
   save.disabled = false;
