@@ -8,7 +8,8 @@
     "dev:deploy": "wrangler deploy --env stage",
     "dev": "wrangler dev",
     "start": "wrangler dev",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "prettier": "prettier --write ."
   },
   "devDependencies": {
     "prettier": "^3.6.2",

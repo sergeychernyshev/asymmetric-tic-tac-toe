@@ -395,7 +395,7 @@ export class TicTacToeDO extends DurableObject<Env> {
               } else {
                 return cell;
               }
-            })
+            }),
           );
         }
 

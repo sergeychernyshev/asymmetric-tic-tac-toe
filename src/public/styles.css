@@ -7,7 +7,8 @@ body {
   font-family: Verdana, Geneva, sans-serif;
 }
 
-.start-button, .restart {
+.start-button,
+.restart {
   border-radius: 0.4rem;
   padding: 0.3rem 1rem;
   font-size: 1.5rem;
@@ -185,7 +186,6 @@ form {
 }
 
 .settings {
-  display: none;
   flex-direction: column;
   padding: 1em;
   border: 1px solid black;
@@ -254,7 +254,6 @@ form {
   background-color: #f9f9f9;
   border: 1px solid #ccc;
   border-radius: 5px;
-  display: none; /* Hidden by default */
   flex-direction: column;
   gap: 0.5em;
   font-size: 0.9em;
@@ -312,17 +311,25 @@ form {
 }
 
 @keyframes fadeInOut {
-  0% { opacity: 0; transform: translate(-50%, 5px); }
-  10% { opacity: 1; transform: translate(-50%, 0); }
-  90% { opacity: 1; transform: translate(-50%, 0); }
-  100% { opacity: 0; transform: translate(-50%, -5px); }
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 5px);
+  }
+  10% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  90% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -5px);
+  }
 }
 
 .sync.hide {
   opacity: 0;
   transition: opacity 1s cubic-bezier(0.64, 0, 0.78, 0);
-}
-
-.visible {
-  display: flex;
 }

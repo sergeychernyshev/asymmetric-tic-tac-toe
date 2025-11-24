@@ -1,7 +1,6 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
-<head>
+  <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Tic-Tac-Toe</title>
@@ -11,17 +10,17 @@
 
     <link rel="icon" href="/x-favicon.png" />
     <link rel="apple-touch-icon" href="/x-favicon.png" />
-</head>
+  </head>
 
-<body>
-      <section class="start-game">
-        <button class="start-button">Start Your Game</button>
-      </section>
+  <body>
+    <section class="start-game">
+      <button class="start-button">Start New Game</button>
+    </section>
 
-      <script>
-        document.querySelector('.start-button').addEventListener('click', () => {
-            document.location.href = `/game?game=${self.crypto.randomUUID()}&token=${self.crypto.randomUUID()}`;
-        })
-      </script>
-</body>
+    <script>
+      document.querySelector('.start-button').addEventListener('click', () => {
+        document.location.href = `/game?game=${self.crypto.randomUUID()}&token=${self.crypto.randomUUID()}`;
+      });
+    </script>
+  </body>
 </html>

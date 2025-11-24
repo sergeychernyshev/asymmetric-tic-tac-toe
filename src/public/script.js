@@ -11,7 +11,6 @@ const XClass = 'x';
 const OClass = 'o';
 const TurnClass = 'turn';
 const WinnerClass = 'winner';
-const VisibleClass = 'visible';
 const HideClass = 'hide';
 
 // DOM elements
