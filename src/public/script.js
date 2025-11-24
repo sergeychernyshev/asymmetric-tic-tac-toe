@@ -29,6 +29,7 @@ const save = document.querySelector('.save');
 const settingsForm = document.querySelector('.settings form');
 const streamerLink = document.getElementById('streamer-link');
 const chatLink = document.getElementById('chat-link');
+const embedLink = document.getElementById('embed-link');
 const linksPanel = document.querySelector('.links-panel');
 
 // disable UI till next data is received
@@ -53,6 +54,15 @@ function updateLinks() {
     chatUrl.searchParams.delete('token');
     chatLink.href = chatUrl.href;
     chatLink.textContent = chatUrl.href;
+  }
+
+  // Embed link (with 'embed' parameter and no token)
+  if (embedLink) {
+    const embedUrl = new URL(currentUrl.href);
+    embedUrl.searchParams.delete('token');
+    embedUrl.searchParams.set('embed', '');
+    embedLink.href = embedUrl.href;
+    embedLink.textContent = embedUrl.href;
   }
 }
 updateLinks();
