@@ -261,6 +261,20 @@ form {
   margin-right: 0.5em;
 }
 
+.links-panel div {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.links-panel div a {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-grow: 1;
+}
+
 .sync.hide {
   opacity: 0;
   transition: opacity 1s cubic-bezier(0.64, 0, 0.78, 0);
