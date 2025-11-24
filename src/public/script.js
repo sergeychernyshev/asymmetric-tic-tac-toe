@@ -27,78 +27,42 @@ const sync = document.querySelector('.sync');
 const settingsPanel = document.querySelector('.settings');
 const saveButton = document.querySelector('.save');
 const settingsForm = document.querySelector('.settings form');
-const streamerLink = document.getElementById('streamer-link');
-const chatLink = document.getElementById('chat-link');
-const embedLink = document.getElementById('embed-link');
-const linksPanel = document.querySelector('.links-panel');
 
 // disable UI till next data is received
 let disableUI = false;
 const isEmbedded = new URLSearchParams(window.location.search).get('embed') === 'true';
 
-if (linksPanel) {
-  function updateLinks() {
-    const currentUrl = new URL(window.location.href);
+// Copy button event listeners
+document.querySelectorAll('.copy-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.dataset.target;
+    const linkElement = document.getElementById(targetId);
+    if (linkElement) {
+      navigator.clipboard
+        .writeText(linkElement.href)
+        .then(() => {
+          const originalText = btn.textContent;
+          btn.textContent = '✅';
 
-    // Streamer link (with token displayed as stars)
-    if (streamerLink) {
-      streamerLink.href = currentUrl.href;
-      const displayUrl = new URL(currentUrl.href);
-      if (displayUrl.searchParams.has('token')) {
-        displayUrl.searchParams.set('token', '*****');
-      }
-      streamerLink.textContent = displayUrl.href;
+          // Create popover
+          const popover = document.createElement('span');
+          popover.textContent = 'URL copied';
+          popover.className = 'copy-popover';
+          btn.appendChild(popover);
+
+          // Remove after 2 seconds
+          setTimeout(() => {
+            btn.textContent = originalText; // Revert button text
+            popover.remove();
+          }, 2000);
+        })
+        .catch((err) => {
+          console.error('Failed to copy: ', err);
+        });
     }
-
-    // Chat link (without token)
-    if (chatLink) {
-      const chatUrl = new URL(currentUrl.href);
-      chatUrl.searchParams.delete('token');
-      chatLink.href = chatUrl.href;
-      chatLink.textContent = chatUrl.href;
-    }
-
-    // Embed link (with 'embed' parameter and no token)
-    if (embedLink) {
-      const embedUrl = new URL(currentUrl.href);
-      embedUrl.searchParams.delete('token');
-      embedUrl.searchParams.set('embed', 'true');
-      embedLink.href = embedUrl.href;
-      embedLink.textContent = embedUrl.href;
-    }
-  }
-  updateLinks();
-
-  document.querySelectorAll('.copy-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const targetId = btn.dataset.target;
-      const linkElement = document.getElementById(targetId);
-      if (linkElement) {
-        navigator.clipboard
-          .writeText(linkElement.href)
-          .then(() => {
-            const originalText = btn.textContent;
-            btn.textContent = '✅';
-
-            // Create popover
-            const popover = document.createElement('span');
-            popover.textContent = 'URL copied';
-            popover.className = 'copy-popover';
-            btn.appendChild(popover);
-
-            // Remove after 2 seconds
-            setTimeout(() => {
-              btn.textContent = originalText; // Revert button text
-              popover.remove();
-            }, 2000);
-          })
-          .catch((err) => {
-            console.error('Failed to copy: ', err);
-          });
-      }
-    });
   });
-}
+});
+
 function getTurnMark(state) {
   if (state.settings.streamerMark === XMark) {
     return state.turn === STREAMER ? XMark : OMark;
@@ -268,19 +232,6 @@ function updateGameFromstate(state) {
     }
     streamer.classList.remove(WinnerClass);
     chat.classList.remove(WinnerClass);
-  }
-
-  // if settings panel exists
-  if (settingsPanel) {
-    if (state.authorized) {
-      settingsPanel.classList.add(VisibleClass);
-      if (linksPanel) linksPanel.classList.add(VisibleClass);
-
-      new FormData(settingsForm);
-    } else {
-      settingsPanel.classList.remove(VisibleClass);
-      if (linksPanel) linksPanel.classList.remove(VisibleClass);
-    }
   }
 }
 
