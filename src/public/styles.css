@@ -101,6 +101,10 @@ h1 {
 
 .grid-cell[disabled] {
   cursor: not-allowed;
+}
+
+.grid-cell[disabled].x,
+.grid-cell[disabled].o {
   background-color: #ededed;
 }
 
