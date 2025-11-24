@@ -251,7 +251,7 @@ form {
   background-color: #f9f9f9;
   border: 1px solid #ccc;
   border-radius: 5px;
-  display: flex;
+  display: none; /* Hidden by default */
   flex-direction: column;
   gap: 0.5em;
   font-size: 0.9em;

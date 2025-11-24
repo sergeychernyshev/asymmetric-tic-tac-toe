@@ -29,6 +29,7 @@ const save = document.querySelector('.save');
 const settingsForm = document.querySelector('.settings form');
 const streamerLink = document.getElementById('streamer-link');
 const chatLink = document.getElementById('chat-link');
+const linksPanel = document.querySelector('.links-panel');
 
 // disable UI till next data is received
 let disableUI = false;
@@ -207,10 +208,12 @@ function updateGameFromstate(state) {
 
   if (state.authorized) {
     settings.classList.add(VisibleClass);
+    linksPanel.classList.add(VisibleClass);
 
     new FormData(settingsForm);
   } else {
     settings.classList.remove(VisibleClass);
+    linksPanel.classList.remove(VisibleClass);
   }
 }
 
