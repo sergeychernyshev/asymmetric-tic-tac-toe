@@ -1,3 +1,8 @@
+/* Universal box-sizing for consistent layout */
+* {
+  box-sizing: border-box;
+}
+
 body {
   font-family: Verdana, Geneva, sans-serif;
 }
