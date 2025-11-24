@@ -24,8 +24,8 @@ const board = document.querySelector('.game-grid');
 const restart = document.querySelector('.restart');
 const player = document.querySelectorAll('.player');
 const sync = document.querySelector('.sync');
-const settings = document.querySelector('.settings');
-const save = document.querySelector('.save');
+const settingsPanel = document.querySelector('.settings');
+const saveButton = document.querySelector('.save');
 const settingsForm = document.querySelector('.settings form');
 const streamerLink = document.getElementById('streamer-link');
 const chatLink = document.getElementById('chat-link');
@@ -36,68 +36,69 @@ const linksPanel = document.querySelector('.links-panel');
 let disableUI = false;
 const isEmbedded = new URLSearchParams(window.location.search).get('embed') === 'true';
 
-function updateLinks() {
-  const currentUrl = new URL(window.location.href);
+if (linksPanel) {
+  function updateLinks() {
+    const currentUrl = new URL(window.location.href);
 
-  // Streamer link (with token displayed as stars)
-  if (streamerLink) {
-    streamerLink.href = currentUrl.href;
-    const displayUrl = new URL(currentUrl.href);
-    if (displayUrl.searchParams.has('token')) {
-      displayUrl.searchParams.set('token', '*****');
+    // Streamer link (with token displayed as stars)
+    if (streamerLink) {
+      streamerLink.href = currentUrl.href;
+      const displayUrl = new URL(currentUrl.href);
+      if (displayUrl.searchParams.has('token')) {
+        displayUrl.searchParams.set('token', '*****');
+      }
+      streamerLink.textContent = displayUrl.href;
     }
-    streamerLink.textContent = displayUrl.href;
-  }
 
-  // Chat link (without token)
-  if (chatLink) {
-    const chatUrl = new URL(currentUrl.href);
-    chatUrl.searchParams.delete('token');
-    chatLink.href = chatUrl.href;
-    chatLink.textContent = chatUrl.href;
-  }
-
-  // Embed link (with 'embed' parameter and no token)
-  if (embedLink) {
-    const embedUrl = new URL(currentUrl.href);
-    embedUrl.searchParams.delete('token');
-    embedUrl.searchParams.set('embed', 'true');
-    embedLink.href = embedUrl.href;
-    embedLink.textContent = embedUrl.href;
-  }
-}
-updateLinks();
-
-document.querySelectorAll('.copy-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const targetId = btn.dataset.target;
-    const linkElement = document.getElementById(targetId);
-    if (linkElement) {
-      navigator.clipboard
-        .writeText(linkElement.href)
-        .then(() => {
-          const originalText = btn.textContent;
-          btn.textContent = '✅';
-
-          // Create popover
-          const popover = document.createElement('span');
-          popover.textContent = 'URL copied';
-          popover.className = 'copy-popover';
-          btn.appendChild(popover);
-
-          // Remove after 2 seconds
-          setTimeout(() => {
-            btn.textContent = originalText; // Revert button text
-            popover.remove();
-          }, 2000);
-        })
-        .catch((err) => {
-          console.error('Failed to copy: ', err);
-        });
+    // Chat link (without token)
+    if (chatLink) {
+      const chatUrl = new URL(currentUrl.href);
+      chatUrl.searchParams.delete('token');
+      chatLink.href = chatUrl.href;
+      chatLink.textContent = chatUrl.href;
     }
+
+    // Embed link (with 'embed' parameter and no token)
+    if (embedLink) {
+      const embedUrl = new URL(currentUrl.href);
+      embedUrl.searchParams.delete('token');
+      embedUrl.searchParams.set('embed', 'true');
+      embedLink.href = embedUrl.href;
+      embedLink.textContent = embedUrl.href;
+    }
+  }
+  updateLinks();
+
+  document.querySelectorAll('.copy-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.dataset.target;
+      const linkElement = document.getElementById(targetId);
+      if (linkElement) {
+        navigator.clipboard
+          .writeText(linkElement.href)
+          .then(() => {
+            const originalText = btn.textContent;
+            btn.textContent = '✅';
+
+            // Create popover
+            const popover = document.createElement('span');
+            popover.textContent = 'URL copied';
+            popover.className = 'copy-popover';
+            btn.appendChild(popover);
+
+            // Remove after 2 seconds
+            setTimeout(() => {
+              btn.textContent = originalText; // Revert button text
+              popover.remove();
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+          });
+      }
+    });
   });
-});
-
+}
 function getTurnMark(state) {
   if (state.settings.streamerMark === XMark) {
     return state.turn === STREAMER ? XMark : OMark;
@@ -245,8 +246,11 @@ function updateGameFromstate(state) {
   // Update turn
   if (state.gameOver) {
     gridCells.forEach((cell) => (cell.disabled = true));
-    restart.disabled = false;
-    restart.focus();
+
+    if (settingsPanel) {
+      restart.disabled = false;
+      restart.focus();
+    }
 
     if (state.winner === STREAMER) {
       streamer.classList.add(WinnerClass);
@@ -259,19 +263,24 @@ function updateGameFromstate(state) {
       gridCells[cell[0] * 3 + cell[1]].classList.add(WinnerClass);
     });
   } else {
-    restart.disabled = true;
+    if (settingsPanel) {
+      restart.disabled = true;
+    }
     streamer.classList.remove(WinnerClass);
     chat.classList.remove(WinnerClass);
   }
 
-  if (state.authorized) {
-    settings.classList.add(VisibleClass);
-    linksPanel.classList.add(VisibleClass);
+  // if settings panel exists
+  if (settingsPanel) {
+    if (state.authorized) {
+      settingsPanel.classList.add(VisibleClass);
+      linksPanel.classList.add(VisibleClass);
 
-    new FormData(settingsForm);
-  } else {
-    settings.classList.remove(VisibleClass);
-    linksPanel.classList.remove(VisibleClass);
+      new FormData(settingsForm);
+    } else {
+      settingsPanel.classList.remove(VisibleClass);
+      linksPanel.classList.remove(VisibleClass);
+    }
   }
 }
 
@@ -306,21 +315,23 @@ if (!isEmbedded) {
     }
   });
 
-  restart.addEventListener('click', () => {
-    sendMessage({ restart: true });
-    restart.disabled = true;
-    gridCells.forEach((cell) => {
-      cell.classList.remove(XClass, OClass, WinnerClass);
-      cell.disabled = false;
+  if (settingsPanel) {
+    restart.addEventListener('click', () => {
+      sendMessage({ restart: true });
+      restart.disabled = true;
+      gridCells.forEach((cell) => {
+        cell.classList.remove(XClass, OClass, WinnerClass);
+        cell.disabled = false;
+      });
+      player.forEach((cell) => {
+        cell.classList.remove(WinnerClass, TurnClass);
+      });
     });
-    player.forEach((cell) => {
-      cell.classList.remove(WinnerClass, TurnClass);
-    });
-  });
+  }
 }
 
-function settingsChaned() {
-  save.disabled = false;
+function settingsChanged() {
+  saveButton.disabled = false;
 }
 
 function saveSettings(e) {
@@ -336,9 +347,11 @@ function saveSettings(e) {
 
   sendMessage({ settings });
 
-  save.disabled = true;
+  saveButton.disabled = true;
 }
 
-save.addEventListener('click', saveSettings);
-settingsForm.addEventListener('submit', saveSettings);
-settingsForm.addEventListener('change', settingsChaned);
+if (settingsPanel) {
+  saveButton.addEventListener('click', saveSettings);
+  settingsForm.addEventListener('submit', saveSettings);
+  settingsForm.addEventListener('change', settingsChanged);
+}
