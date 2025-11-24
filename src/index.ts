@@ -94,20 +94,25 @@ export default {
       page = page.replace(/{{gamesPerRound}}/g, `${state.settings.gamesPerRound}`);
 
       // links
-      const chatUrl = new URL(url.href);
+      const baseUrl = `${url.origin}${url.pathname}?game=${gameID}`;
+
+      const chatUrl = new URL(baseUrl);
       chatUrl.searchParams.delete('token');
       page = page.replace(/{{chatLink}}/g, chatUrl.href);
 
-      const embedUrl = new URL(url.href);
+      const embedUrl = new URL(baseUrl);
       embedUrl.searchParams.delete('token');
       embedUrl.searchParams.set('embed', 'true');
       page = page.replace(/{{embedLink}}/g, embedUrl.href);
 
-      const streamerUrl = new URL(url.href);
+      const streamerUrl = new URL(baseUrl);
+      if (token) {
+        streamerUrl.searchParams.set('token', token);
+      }
       page = page.replace(/{{streamerLink}}/g, streamerUrl.href);
 
-      const streamerDisplayUrl = new URL(url.href);
-      if (streamerDisplayUrl.searchParams.has('token')) {
+      const streamerDisplayUrl = new URL(baseUrl);
+      if (token) {
         streamerDisplayUrl.searchParams.set('token', '*****');
       }
       page = page.replace(/{{streamerDisplayLink}}/g, streamerDisplayUrl.href);
