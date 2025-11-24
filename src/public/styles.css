@@ -255,6 +255,7 @@ form {
   flex-direction: column;
   gap: 0.5em;
   font-size: 0.9em;
+  max-width: 300px;
 }
 
 .links-panel strong {
