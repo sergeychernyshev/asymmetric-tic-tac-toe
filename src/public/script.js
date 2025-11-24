@@ -60,7 +60,7 @@ function updateLinks() {
   if (embedLink) {
     const embedUrl = new URL(currentUrl.href);
     embedUrl.searchParams.delete('token');
-    embedUrl.searchParams.set('embed', '');
+    embedUrl.searchParams.set('embed', 'true');
     embedLink.href = embedUrl.href;
     embedLink.textContent = embedUrl.href;
   }
