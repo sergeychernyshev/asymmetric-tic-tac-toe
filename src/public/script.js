@@ -34,6 +34,7 @@ const linksPanel = document.querySelector('.links-panel');
 
 // disable UI till next data is received
 let disableUI = false;
+const isEmbedded = new URLSearchParams(window.location.search).get('embed') === 'true';
 
 function updateLinks() {
   const currentUrl = new URL(window.location.href);
@@ -261,7 +262,7 @@ function updateGameFromstate(state) {
 }
 
 board.addEventListener('click', (e) => {
-  if (disableUI) {
+  if (disableUI || isEmbedded) {
     sync.classList.remove(HideClass);
     return;
   }
