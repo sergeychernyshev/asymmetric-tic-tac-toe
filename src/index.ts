@@ -27,7 +27,7 @@ export default {
     // The Durable Object constructor will be invoked upon the first call for a given id
     let stub: DurableObjectStub<TicTacToeDO> = env.TIC_TAC_TOE_DO.get(id);
 
-    // if tocken is provided, check if it is valid
+    // if token is provided, check if it is valid
     const token = url.searchParams.get('token');
     if (token !== null && !(await stub.checkToken(token))) {
       return new Response('Invalid token', { status: 403 });
@@ -92,6 +92,12 @@ export default {
 
       page = page.replace(/{{chatTurnTime}}/g, `${state.settings.chatTurnTime}`);
       page = page.replace(/{{gamesPerRound}}/g, `${state.settings.gamesPerRound}`);
+
+      // Remove settings and links panels if not authorized
+      if (!token) {
+        page = page.replace(/<section class="settings">[\s\S]*?<\/section>/g, '');
+        page = page.replace(/<section class="links-panel">[\s\S]*?<\/section>/g, '');
+      }
 
       return new Response(page, { headers });
     }
