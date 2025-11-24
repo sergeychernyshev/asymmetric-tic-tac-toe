@@ -264,6 +264,13 @@ export class TicTacToeDO extends DurableObject<Env> {
       if (message.move) {
         const [y, x] = message.move;
 
+        // If no token is present (unauthenticated), and it's the streamer's turn, deny the move.
+        if (!token && this.state.turn === Player.STREAMER) {
+          console.log('Unauthenticated user tried to make a STREAMER move. Denied.');
+          this.sendState(ws); // Send current state to inform client of denial (or just return)
+          return;
+        }
+
         // check if coordinates are valid
         if (x < 0 || x > 2 || y < 0 || y > 2) {
           console.log('invalid coordinates', x, y);
