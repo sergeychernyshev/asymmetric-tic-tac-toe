@@ -241,10 +241,6 @@ form {
   text-align: center;
 }
 
-.visible {
-  display: flex;
-}
-
 .links-panel {
   margin: 1em auto;
   padding: 1em;
@@ -279,4 +275,8 @@ form {
 .sync.hide {
   opacity: 0;
   transition: opacity 1s cubic-bezier(0.64, 0, 0.78, 0);
+}
+
+.visible {
+  display: flex;
 }
