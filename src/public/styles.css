@@ -103,8 +103,8 @@ h1 {
   cursor: not-allowed;
 }
 
-.grid-cell[disabled].x,
-.grid-cell[disabled].o {
+.grid-cell[disabled].x:not(.winner),
+.grid-cell[disabled].o:not(.winner) {
   background-color: #ededed;
 }
 
