@@ -27,9 +27,31 @@ const sync = document.querySelector('.sync');
 const settings = document.querySelector('.settings');
 const save = document.querySelector('.save');
 const settingsForm = document.querySelector('.settings form');
+const streamerLink = document.getElementById('streamer-link');
+const chatLink = document.getElementById('chat-link');
 
 // disable UI till next data is received
 let disableUI = false;
+
+function updateLinks() {
+  const currentUrl = new URL(window.location.href);
+  const params = new URLSearchParams(currentUrl.search);
+
+  // Streamer link (with token)
+  if (streamerLink) {
+    streamerLink.href = currentUrl.href;
+    streamerLink.textContent = currentUrl.href;
+  }
+
+  // Chat link (without token)
+  if (chatLink) {
+    const chatUrl = new URL(window.location.href);
+    chatUrl.searchParams.delete('token');
+    chatLink.href = chatUrl.href;
+    chatLink.textContent = chatUrl.href;
+  }
+}
+updateLinks();
 
 function getTurnMark(state) {
   if (state.settings.streamerMark === XMark) {

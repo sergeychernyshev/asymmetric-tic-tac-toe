@@ -245,6 +245,22 @@ form {
   display: flex;
 }
 
+.links-panel {
+  margin-top: 1em;
+  padding: 1em;
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  font-size: 0.9em;
+}
+
+.links-panel strong {
+  margin-right: 0.5em;
+}
+
 .sync.hide {
   opacity: 0;
   transition: opacity 1s cubic-bezier(0.64, 0, 0.78, 0);
