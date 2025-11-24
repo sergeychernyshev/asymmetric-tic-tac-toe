@@ -65,10 +65,15 @@ document.querySelectorAll('.copy-btn').forEach((btn) => {
       navigator.clipboard
         .writeText(linkElement.href)
         .then(() => {
-          const originalText = btn.textContent;
-          btn.textContent = '✅';
+          // Create popover
+          const popover = document.createElement('span');
+          popover.textContent = 'URL copied';
+          popover.className = 'copy-popover';
+          btn.appendChild(popover);
+
+          // Remove after 2 seconds
           setTimeout(() => {
-            btn.textContent = originalText;
+            popover.remove();
           }, 2000);
         })
         .catch((err) => {
