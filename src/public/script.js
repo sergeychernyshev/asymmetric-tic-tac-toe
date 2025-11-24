@@ -36,17 +36,20 @@ let disableUI = false;
 
 function updateLinks() {
   const currentUrl = new URL(window.location.href);
-  const params = new URLSearchParams(currentUrl.search);
 
-  // Streamer link (with token)
+  // Streamer link (with token displayed as stars)
   if (streamerLink) {
     streamerLink.href = currentUrl.href;
-    streamerLink.textContent = currentUrl.href;
+    const displayUrl = new URL(currentUrl.href);
+    if (displayUrl.searchParams.has('token')) {
+      displayUrl.searchParams.set('token', '*****');
+    }
+    streamerLink.textContent = displayUrl.href;
   }
 
   // Chat link (without token)
   if (chatLink) {
-    const chatUrl = new URL(window.location.href);
+    const chatUrl = new URL(currentUrl.href);
     chatUrl.searchParams.delete('token');
     chatLink.href = chatUrl.href;
     chatLink.textContent = chatUrl.href;
