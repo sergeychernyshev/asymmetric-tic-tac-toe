@@ -1,4 +1,4 @@
-import pageTemplate from './index.html';
+import pageTemplate from './game.html';
 import { Mark, Player, State, TicTacToeDO } from './do';
 
 export { TicTacToeDO } from './do';
@@ -17,7 +17,10 @@ export default {
     const requestPath = url.pathname;
 
     let gameID = url.searchParams.get('game');
-    if (gameID === null || !gameID.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
+    if (gameID !== null) {
+      gameID = gameID.toUpperCase();
+    }
+    if (gameID === null || !gameID.match(/^[A-Z]{3}-[0-9]{3}$/)) {
       gameID = '';
     }
 
@@ -27,13 +30,13 @@ export default {
     // The Durable Object constructor will be invoked upon the first call for a given id
     let stub: DurableObjectStub<TicTacToeDO> = env.TIC_TAC_TOE_DO.get(id);
 
-    // if tocken is provided, check if it is valid
+    // if token is provided, check if it is valid
     const token = url.searchParams.get('token');
     if (token !== null && !(await stub.checkToken(token))) {
       return new Response('Invalid token', { status: 403 });
     }
 
-    if (requestPath.endsWith('/')) {
+    if (gameID && requestPath.endsWith('/play')) {
       let headers = new Headers();
       headers.set('Content-type', 'text/html; charset=utf-8');
       headers.set('Cache-control', 'no-store');
@@ -46,9 +49,12 @@ export default {
       // embed the state in the HTML for initial render
       page = page.replace(/{{state}}/g, JSON.stringify(state));
 
+      // game ID
+      page = page.replace(/{{gameId}}/g, gameID);
+
       // favicon
       let favicon = '/x-favicon.png';
-      if (state.streamerMark === Mark.X) {
+      if (state.settings.streamerMark === Mark.X) {
         if (state.turn === Player.STREAMER) {
           favicon = '/x-favicon.png';
         } else {
@@ -65,11 +71,11 @@ export default {
 
       // current player and their mark
       if (state.turn === Player.STREAMER) {
-        page = page.replace(/{{streamerTurn}}/g, state.streamerMark === Mark.X ? 'x turn' : 'o turn');
-        page = page.replace(/{{chatTurn}}/g, state.streamerMark === Mark.X ? 'o' : 'x');
+        page = page.replace(/{{streamerTurn}}/g, state.settings.streamerMark === Mark.X ? 'x turn' : 'o turn');
+        page = page.replace(/{{chatTurn}}/g, state.settings.streamerMark === Mark.X ? 'o' : 'x');
       } else {
-        page = page.replace(/{{streamerTurn}}/g, state.streamerMark === Mark.X ? 'x' : 'o');
-        page = page.replace(/{{chatTurn}}/g, state.streamerMark === Mark.X ? 'o turn' : 'x turn');
+        page = page.replace(/{{streamerTurn}}/g, state.settings.streamerMark === Mark.X ? 'x' : 'o');
+        page = page.replace(/{{chatTurn}}/g, state.settings.streamerMark === Mark.X ? 'o turn' : 'x turn');
       }
 
       // board state
@@ -82,6 +88,47 @@ export default {
       page = page.replace(/{{cell02}}/g, state.board[2][0] === Mark.X ? 'x disabled' : state.board[2][0] === Mark.O ? 'o disabled' : '');
       page = page.replace(/{{cell12}}/g, state.board[2][1] === Mark.X ? 'x disabled' : state.board[2][1] === Mark.O ? 'o disabled' : '');
       page = page.replace(/{{cell22}}/g, state.board[2][2] === Mark.X ? 'x disabled' : state.board[2][2] === Mark.O ? 'o disabled' : '');
+
+      // settings
+      page = page.replace(/{{firstMoveStreamer}}/g, `${state.settings.first === Player.STREAMER ? 'checked' : ''}`);
+      page = page.replace(/{{firstMoveChat}}/g, `${state.settings.first === Player.CHAT ? 'checked' : ''}`);
+
+      page = page.replace(/{{streamerMarkX}}/g, `${state.settings.streamerMark === Mark.X ? 'checked' : ''}`);
+      page = page.replace(/{{streamerMarkO}}/g, `${state.settings.streamerMark === Mark.O ? 'checked' : ''}`);
+
+      page = page.replace(/{{chatTurnTime}}/g, `${state.settings.chatTurnTime}`);
+      page = page.replace(/{{gamesPerRound}}/g, `${state.settings.gamesPerRound}`);
+
+      // links
+      const baseUrl = `${url.origin}${url.pathname}?game=${gameID}`;
+
+      const chatUrl = new URL(baseUrl);
+      chatUrl.searchParams.delete('token');
+      page = page.replace(/{{chatLink}}/g, chatUrl.href);
+
+      const embedUrl = new URL(baseUrl);
+      embedUrl.searchParams.delete('token');
+      embedUrl.searchParams.set('embed', 'true');
+      page = page.replace(/{{embedLink}}/g, embedUrl.href);
+
+      const streamerUrl = new URL(baseUrl);
+      if (token) {
+        streamerUrl.searchParams.set('token', token);
+      }
+      page = page.replace(/{{streamerLink}}/g, streamerUrl.href);
+
+      const streamerDisplayUrl = new URL(baseUrl);
+      if (token) {
+        streamerDisplayUrl.searchParams.set('token', '*****');
+      }
+      page = page.replace(/{{streamerDisplayLink}}/g, streamerDisplayUrl.href);
+
+      // Remove settings and links panels if not authorized
+      if (!token) {
+        page = page.replace(/<section class="settings">[\s\S]*?<\/section>/g, '');
+        page = page.replace(/<section class="links-panel">[\s\S]*?<\/section>/g, '');
+      }
+
       return new Response(page, { headers });
     }
 

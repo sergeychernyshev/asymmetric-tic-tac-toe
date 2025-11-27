@@ -8,12 +8,13 @@
     "dev:deploy": "wrangler deploy --env stage",
     "dev": "wrangler dev",
     "start": "wrangler dev",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "prettier": "prettier --write ."
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250303.0",
+    "prettier": "^3.6.2",
     "typescript": "^5.5.2",
-    "wrangler": "^4.15.2"
+    "wrangler": "^4.50.0"
   },
   "dependencies": {
     "zod": "^3.25.28"

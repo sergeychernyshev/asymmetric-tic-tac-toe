@@ -27,15 +27,23 @@ type Coordinates = z.infer<typeof CoordinatesSchema>;
 const TokenHashSchema = z.instanceof(ArrayBuffer);
 type TokenHash = z.infer<typeof TokenHashSchema>;
 
+const SettingsSchema = z.object({
+  first: PlayerSchema, // First move: true = streamer, false = chat
+  streamerMark: MarkSchema, // Which mark streamer uses? true = X, false = O
+  chatTurnTime: z.number(), // How long chat has to make a move in seconds
+  gamesPerRound: z.number(), // How many games to play in a row
+});
+
+type Settings = z.infer<typeof SettingsSchema>;
+
 const StateSchema = z.object({
   board: BoardSchema,
   turn: PlayerSchema, // Who's turn is it?
-  started: z.boolean(), // did game start?
+  // started: z.boolean(), // did game start?
   winner: PlayerSchema.nullable(), // who is the winner
   gameOver: z.boolean(), // Is the game over?
-  first: PlayerSchema, // First move
-  streamerMark: MarkSchema, // Which mark streamer uses?
   winnerCoordinates: z.array(CoordinatesSchema), // array of coordinate pairs
+  settings: SettingsSchema, // game settings
 });
 export type State = z.infer<typeof StateSchema>;
 
@@ -43,6 +51,7 @@ export type State = z.infer<typeof StateSchema>;
 export class TicTacToeDO extends DurableObject<Env> {
   storage: DurableObjectStorage;
   state: State;
+  settings: Settings;
 
   /**
    * The constructor is invoked once upon creation of the Durable Object, i.e. the first call to
@@ -55,12 +64,20 @@ export class TicTacToeDO extends DurableObject<Env> {
     super(ctx, env);
 
     this.storage = ctx.storage;
+
+    // default settings that can be overriden from the state if it exists
+    this.settings = {
+      first: Player.STREAMER, // First move: true = streamer, false = chat
+      streamerMark: Mark.X, // Which mark streamer uses? true = X, false = O
+      chatTurnTime: 15, // How long chat has to make a move in seconds
+      gamesPerRound: 3, // How many games to play in a row
+    };
     this.state = this.getEmptyState();
 
     this.ctx.blockConcurrencyWhile(async () => {
       // load the state from the database or create a new one
       if (!(await this.loadState())) {
-        await this.initState();
+        await this.initStateStorage();
       }
     });
   }
@@ -69,8 +86,8 @@ export class TicTacToeDO extends DurableObject<Env> {
     await this.storage.put('state', this.state);
   }
 
-  private async initState() {
-    console.log('!!! invalidating state, cleaning up and creating a new one !!!');
+  private async initStateStorage() {
+    console.log('!!! invalidating stored state, cleaning up and creating a new one !!!');
 
     // delete any corrupted, unparse-able state if there was any
     await this.storage.delete('state');
@@ -84,6 +101,8 @@ export class TicTacToeDO extends DurableObject<Env> {
       const result: State = StateSchema.parse(await this.storage.get('state'));
       if (typeof result !== 'undefined') {
         this.state = result;
+        this.settings = result.settings;
+        this.state.settings = this.settings;
         return true;
       }
     } catch (err) {}
@@ -92,24 +111,21 @@ export class TicTacToeDO extends DurableObject<Env> {
   }
 
   private getEmptyState(): State {
-    const emptyState = {
+    const emptyState: State = {
       board: [
         [0, 0, 0],
         [0, 0, 0],
         [0, 0, 0],
       ],
       turn: Player.STREAMER, // Who's turn is it? true = streamer, false = chat
-      started: false,
+      // started: false,
       winner: null, // who is the winner: true = streamer, false = chat, null = draw or unknown
       gameOver: false, // Is the game over?
-
-      // these are config options
-      first: Player.STREAMER, // First move: true = streamer, false = chat
-      streamerMark: Mark.X, // Which mark streamer uses? true = X, false = O
-      winnerCoordinates: [],
+      winnerCoordinates: [], // array of coordinate pairs that make up the winning line
+      settings: this.settings,
     };
 
-    if (emptyState.first === Player.STREAMER) {
+    if (emptyState.settings.first === Player.STREAMER) {
       emptyState.turn = Player.STREAMER;
     } else {
       emptyState.turn = Player.CHAT;
@@ -129,6 +145,15 @@ export class TicTacToeDO extends DurableObject<Env> {
     const webSocketPair = new WebSocketPair();
     const [client, server] = Object.values(webSocketPair);
 
+    const url = new URL(request.url);
+    const token = url.searchParams.get('token');
+
+    if (token && (await this.checkToken(token))) {
+      // If the token is valid, we can record it as an attachment to the WebSocket.
+      // This will allow us to retrieve it later in the `webSocketMessage()` handler.
+      server.serializeAttachment(token);
+    }
+
     // Calling `acceptWebSocket()` informs the runtime that this WebSocket is to begin terminating
     // request within the Durable Object. It has the effect of "accepting" the connection,
     // and allowing the WebSocket to send and receive messages.
@@ -146,16 +171,21 @@ export class TicTacToeDO extends DurableObject<Env> {
     });
   }
 
-  private broadcaseState() {
+  private broadcastState() {
     // send new state to all connected clients
     const sockets = this.ctx.getWebSockets();
-    sockets.forEach((ws) => {
-      try {
-        ws.send(JSON.stringify(this.state));
-      } catch (err) {
-        console.log('could not send messages to:', ws);
-      }
-    });
+    sockets.forEach((ws) => this.sendState(ws));
+  }
+
+  private sendState(ws: WebSocket) {
+    const token = ws.deserializeAttachment() as string | undefined;
+    const msg = { ...this.state, authorized: !!token };
+
+    try {
+      ws.send(JSON.stringify(msg));
+    } catch (err) {
+      console.log('could not send messages to:', ws);
+    }
   }
 
   async getState(): Promise<State> {
@@ -211,21 +241,35 @@ export class TicTacToeDO extends DurableObject<Env> {
   }
 
   async webSocketMessage(ws: WebSocket, messageString: ArrayBuffer | string) {
-    console.log('ws', ws);
+    const token = ws.deserializeAttachment() as string | undefined;
 
     if (typeof messageString === 'string') {
       const message = JSON.parse(messageString);
+
+      // user connected, let's send this user the current state
+      if (message.connected) {
+        this.sendState(ws);
+        return;
+      }
 
       // restart the game
       if (message.restart) {
         this.state = this.getEmptyState();
         await this.saveState();
 
-        this.broadcaseState();
+        this.broadcastState();
+        return;
       }
 
       if (message.move) {
         const [y, x] = message.move;
+
+        // If no token is present (unauthenticated), and it's the streamer's turn, deny the move.
+        if (!token && this.state.turn === Player.STREAMER) {
+          console.log('Unauthenticated user tried to make a STREAMER move. Denied.');
+          this.sendState(ws); // Send current state to inform client of denial (or just return)
+          return;
+        }
 
         // check if coordinates are valid
         if (x < 0 || x > 2 || y < 0 || y > 2) {
@@ -237,10 +281,10 @@ export class TicTacToeDO extends DurableObject<Env> {
         let mark: Mark;
         if (this.state.turn === Player.STREAMER) {
           // streamer made a move
-          mark = this.state.streamerMark;
+          mark = this.state.settings.streamerMark;
         } else {
           // chat made a move
-          mark = this.state.streamerMark === Mark.X ? Mark.O : Mark.X;
+          mark = this.state.settings.streamerMark === Mark.X ? Mark.O : Mark.X;
         }
 
         // ignore invalide moves
@@ -300,7 +344,7 @@ export class TicTacToeDO extends DurableObject<Env> {
         }
 
         if (winnerMark !== null) {
-          if (winnerMark === this.state.streamerMark) {
+          if (winnerMark === this.state.settings.streamerMark) {
             this.state.winner = Player.STREAMER;
           } else {
             this.state.winner = Player.CHAT;
@@ -320,16 +364,48 @@ export class TicTacToeDO extends DurableObject<Env> {
 
         await this.saveState();
 
-        this.broadcaseState();
+        this.broadcastState();
+        return;
       }
 
-      // user connected, let's send this user the current state
-      if (message.connected) {
-        try {
-          ws.send(JSON.stringify(this.state));
-        } catch (err) {
-          console.log('could not send messages to:', ws);
+      // save settings only if the user is authorized
+      if (token && message.settings) {
+        const settings = SettingsSchema.parse(message.settings);
+
+        // if this is the first turn, we need to check if first move setting has changed and update current turn
+        if (
+          !this.state.board.find((row) => row.find((cell) => cell === Mark.X || cell === Mark.O)) &&
+          this.settings.first !== settings.first
+        ) {
+          if (settings.first === Player.STREAMER) {
+            this.state.turn = Player.STREAMER;
+          } else {
+            this.state.turn = Player.CHAT;
+          }
         }
+
+        // if the streamer mark is changed, we need to swap marks on the the board
+        if (this.settings.streamerMark !== settings.streamerMark) {
+          this.state.board = this.state.board.map((row) =>
+            row.map((cell) => {
+              if (cell === Mark.X) {
+                return Mark.O;
+              } else if (cell === Mark.O) {
+                return Mark.X;
+              } else {
+                return cell;
+              }
+            }),
+          );
+        }
+
+        // update the state with new settings
+        this.settings = settings;
+        this.state.settings = this.settings;
+        await this.saveState();
+
+        this.broadcastState();
+        return;
       }
     }
   }

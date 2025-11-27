@@ -11,30 +11,73 @@ const XClass = 'x';
 const OClass = 'o';
 const TurnClass = 'turn';
 const WinnerClass = 'winner';
-const VisibleClass = 'visible';
 const HideClass = 'hide';
 
 // DOM elements
 const favicon = document.querySelector("link[rel='icon']");
 const streamer = document.querySelector('.streamer');
 const chat = document.querySelector('.chat');
+const turnMessage = document.querySelector('.turn-message');
 const gridCells = document.querySelectorAll('.grid-cell');
-const gameOver = document.querySelector('.game-over');
 const squares = document.querySelectorAll('.square');
 const board = document.querySelector('.game-grid');
 const restart = document.querySelector('.restart');
 const player = document.querySelectorAll('.player');
 const sync = document.querySelector('.sync');
+const settingsPanel = document.querySelector('.settings');
+const saveButton = document.querySelector('.save');
+const settingsForm = document.querySelector('.settings form');
 
 // disable UI till next data is received
 let disableUI = false;
+const isEmbedded = new URLSearchParams(window.location.search).get('embed') === 'true';
+
+// Copy button event listeners
+document.querySelectorAll('.copy-btn').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const targetId = btn.dataset.target;
+    const targetElement = document.getElementById(targetId);
+    if (targetElement) {
+      let textToCopy;
+      if (targetElement.tagName === 'A') {
+        textToCopy = targetElement.href;
+      } else if (targetElement.tagName === 'SPAN') {
+        textToCopy = targetElement.textContent;
+      }
+
+      if (textToCopy) {
+        navigator.clipboard
+          .writeText(textToCopy)
+          .then(() => {
+            const originalText = btn.textContent;
+            btn.textContent = '✅';
+
+            // Create popover
+            const popover = document.createElement('span');
+            popover.textContent = 'Copied!';
+            popover.className = 'copy-popover';
+            btn.appendChild(popover);
+
+            // Remove after 2 seconds
+            setTimeout(() => {
+              btn.textContent = originalText; // Revert button text
+              popover.remove();
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+          });
+      }
+    }
+  });
+});
 
 function getTurnMark(state) {
-  if (state.streamerMark === XMark) {
+  if (state.settings.streamerMark === XMark) {
     return state.turn === STREAMER ? XMark : OMark;
   }
 
-  if (state.streamerMark === OMark) {
+  if (state.settings.streamerMark === OMark) {
     return state.turn === CHAT ? XMark : OMark;
   }
 }
@@ -89,7 +132,7 @@ function join() {
   // receive a message
   ws.addEventListener('message', (event) => {
     state = JSON.parse(event.data);
-    console.log('Received game state from server:', state);
+    // console.log('Received game state from server:', state);
 
     // Convert the server's 2D board to our game format
     updateGameFromstate(state);
@@ -117,7 +160,7 @@ function updateGameFromstate(state) {
   streamer.classList.remove(XClass, OClass, TurnClass);
   chat.classList.remove(XClass, OClass, TurnClass);
 
-  if (state.streamerMark === XMark) {
+  if (state.settings.streamerMark === XMark) {
     streamer.classList.add(XClass);
     chat.classList.add(OClass);
   } else {
@@ -141,7 +184,16 @@ function updateGameFromstate(state) {
   gridCells.forEach((cell) => {
     cell.classList.remove(XClass, OClass, WinnerClass);
     cell.disabled = false;
+    // Store original title if not already stored
+    if (!cell.hasAttribute('data-original-title')) {
+      cell.setAttribute('data-original-title', cell.title);
+    }
+    // Restore original title when re-enabling
+    cell.title = cell.getAttribute('data-original-title');
   });
+
+  // Determine if empty cells should be disabled for unauthenticated players when it's not their turn
+  const shouldDisableAllEmptyCells = !state.authorized && state.turn === STREAMER;
 
   // Update from server's board state In server: 0=empty, 1=X, 2=O
   for (let row = 0; row < 3; row++) {
@@ -155,15 +207,24 @@ function updateGameFromstate(state) {
       } else if (cellState === OMark) {
         gridCells[cellIndex].classList.add(OClass);
         gridCells[cellIndex].disabled = true;
+      } else if (shouldDisableAllEmptyCells) {
+        gridCells[cellIndex].disabled = true;
+        // Append wait message to tooltip
+        const originalTitle = gridCells[cellIndex].getAttribute('data-original-title');
+        gridCells[cellIndex].title = `${originalTitle} - Wait for opponent's turn`;
       }
     }
   }
 
   // Update turn
   if (state.gameOver) {
+    turnMessage.textContent = 'Game Over';
     gridCells.forEach((cell) => (cell.disabled = true));
-    gameOver.classList.add(VisibleClass);
-    restart.focus();
+
+    if (settingsPanel) {
+      restart.disabled = false;
+      restart.focus();
+    }
 
     if (state.winner === STREAMER) {
       streamer.classList.add(WinnerClass);
@@ -176,46 +237,93 @@ function updateGameFromstate(state) {
       gridCells[cell[0] * 3 + cell[1]].classList.add(WinnerClass);
     });
   } else {
-    gameOver.classList.remove(VisibleClass);
+    if (isEmbedded) {
+      turnMessage.textContent = '';
+    } else {
+      const isMyTurn = (state.authorized && state.turn === STREAMER) || (!state.authorized && state.turn === CHAT);
+      if (isMyTurn) {
+        turnMessage.textContent = "It's your turn!";
+      } else {
+        turnMessage.textContent = '⏳ Wait for your turn...';
+      }
+    }
 
+    if (settingsPanel) {
+      restart.disabled = true;
+    }
     streamer.classList.remove(WinnerClass);
     chat.classList.remove(WinnerClass);
   }
 }
 
-board.addEventListener('click', (e) => {
-  if (disableUI) {
-    sync.classList.remove(HideClass);
-    return;
-  }
+if (!isEmbedded) {
+  board.addEventListener('click', (e) => {
+    // If the user is not authorized and it's not the chat's turn, do nothing.
+    if (!state.authorized && state.turn !== CHAT) {
+      return;
+    }
 
-  const target = event.target;
-  const isCell = target.classList.contains('grid-cell');
+    if (disableUI) {
+      sync.classList.remove(HideClass);
+      return;
+    }
 
-  if (isCell && currentWebSocket !== null) {
-    const cellValueX = Number.parseInt(target.dataset.x);
-    const cellValueY = Number.parseInt(target.dataset.y);
-    disableUI = true;
-    sendMessage({ move: [cellValueX, cellValueY] });
+    const target = event.target;
+    const isCell = target.classList.contains('grid-cell');
 
-    // The player clicked on a cell that is still empty
-    target.disabled = true;
-    target.classList.add(getTurnMark(state) === XMark ? XClass : OClass);
+    if (isCell && currentWebSocket !== null) {
+      const cellValueX = Number.parseInt(target.dataset.x);
+      const cellValueY = Number.parseInt(target.dataset.y);
+      disableUI = true;
+      sendMessage({ move: [cellValueX, cellValueY] });
 
-    player.forEach((cell) => {
-      cell.classList.remove(TurnClass);
+      // The player clicked on a cell that is still empty
+      target.disabled = true;
+      target.classList.add(getTurnMark(state) === XMark ? XClass : OClass);
+
+      player.forEach((cell) => {
+        cell.classList.remove(TurnClass);
+      });
+    }
+  });
+
+  if (settingsPanel) {
+    restart.addEventListener('click', () => {
+      sendMessage({ restart: true });
+      restart.disabled = true;
+      gridCells.forEach((cell) => {
+        cell.classList.remove(XClass, OClass, WinnerClass);
+        cell.disabled = false;
+      });
+      player.forEach((cell) => {
+        cell.classList.remove(WinnerClass, TurnClass);
+      });
     });
   }
-});
+}
 
-restart.addEventListener('click', () => {
-  sendMessage({ restart: true });
-  gameOver.classList.remove(VisibleClass);
-  gridCells.forEach((cell) => {
-    cell.classList.remove(XClass, OClass, WinnerClass);
-    cell.disabled = false;
-  });
-  player.forEach((cell) => {
-    cell.classList.remove(WinnerClass, TurnClass);
-  });
-});
+function settingsChanged() {
+  saveButton.disabled = false;
+}
+
+function saveSettings(e) {
+  e.preventDefault();
+
+  const formData = new FormData(settingsForm);
+  const settings = {
+    streamerMark: formData.get('streamer-mark'),
+    first: formData.get('first-move'),
+    gamesPerRound: Number.parseInt(formData.get('games-per-round')),
+    chatTurnTime: Number.parseInt(formData.get('chat-turn-time')),
+  };
+
+  sendMessage({ settings });
+
+  saveButton.disabled = true;
+}
+
+if (settingsPanel) {
+  saveButton.addEventListener('click', saveSettings);
+  settingsForm.addEventListener('submit', saveSettings);
+  settingsForm.addEventListener('change', settingsChanged);
+}
