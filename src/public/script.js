@@ -36,29 +36,38 @@ const isEmbedded = new URLSearchParams(window.location.search).get('embed') === 
 document.querySelectorAll('.copy-btn').forEach((btn) => {
   btn.addEventListener('click', () => {
     const targetId = btn.dataset.target;
-    const linkElement = document.getElementById(targetId);
-    if (linkElement) {
-      navigator.clipboard
-        .writeText(linkElement.href)
-        .then(() => {
-          const originalText = btn.textContent;
-          btn.textContent = '✅';
+    const targetElement = document.getElementById(targetId);
+    if (targetElement) {
+      let textToCopy;
+      if (targetElement.tagName === 'A') {
+        textToCopy = targetElement.href;
+      } else if (targetElement.tagName === 'SPAN') {
+        textToCopy = targetElement.textContent;
+      }
 
-          // Create popover
-          const popover = document.createElement('span');
-          popover.textContent = 'URL copied';
-          popover.className = 'copy-popover';
-          btn.appendChild(popover);
+      if (textToCopy) {
+        navigator.clipboard
+          .writeText(textToCopy)
+          .then(() => {
+            const originalText = btn.textContent;
+            btn.textContent = '✅';
 
-          // Remove after 2 seconds
-          setTimeout(() => {
-            btn.textContent = originalText; // Revert button text
-            popover.remove();
-          }, 2000);
-        })
-        .catch((err) => {
-          console.error('Failed to copy: ', err);
-        });
+            // Create popover
+            const popover = document.createElement('span');
+            popover.textContent = 'Copied!';
+            popover.className = 'copy-popover';
+            btn.appendChild(popover);
+
+            // Remove after 2 seconds
+            setTimeout(() => {
+              btn.textContent = originalText; // Revert button text
+              popover.remove();
+            }, 2000);
+          })
+          .catch((err) => {
+            console.error('Failed to copy: ', err);
+          });
+      }
     }
   });
 });

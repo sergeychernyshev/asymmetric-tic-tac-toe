@@ -17,7 +17,10 @@ export default {
     const requestPath = url.pathname;
 
     let gameID = url.searchParams.get('game');
-    if (gameID === null || !gameID.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
+    if (gameID !== null) {
+      gameID = gameID.toUpperCase();
+    }
+    if (gameID === null || !gameID.match(/^[A-Z]{3}-[0-9]{3}$/)) {
       gameID = '';
     }
 
@@ -45,6 +48,9 @@ export default {
 
       // embed the state in the HTML for initial render
       page = page.replace(/{{state}}/g, JSON.stringify(state));
+
+      // game ID
+      page = page.replace(/{{gameId}}/g, gameID);
 
       // favicon
       let favicon = '/x-favicon.png';

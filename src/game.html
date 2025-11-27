@@ -95,7 +95,11 @@
     </main>
     <section class="links-panel">
       <div>
-        <strong>Share:</strong> <a id="chat-link" href="{{chatLink}}" target="_blank" rel="noopener noreferrer">{{chatLink}}</a>
+        <strong>Game ID:</strong> <span id="game-id-display">{{gameId}}</span>
+        <button class="copy-btn" data-target="game-id-display" aria-label="Copy Game ID" title="Click to copy Game ID">📋</button>
+      </div>
+      <div>
+        <strong>Game Link:</strong> <a id="chat-link" href="{{chatLink}}" target="_blank" rel="noopener noreferrer">{{chatLink}}</a>
         <button class="copy-btn" data-target="chat-link" aria-label="Copy Chat Link" title="Click to copy URL">📋</button>
       </div>
     </section>

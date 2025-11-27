@@ -18,8 +18,20 @@
     </section>
 
     <script>
+      function generateGameId() {
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        let result = '';
+        for (let i = 0; i < 3; i++) {
+          result += letters.charAt(Math.floor(Math.random() * letters.length));
+        }
+        result += '-';
+        result += Math.floor(Math.random() * 1000);
+
+        return result;
+      }
+
       document.querySelector('.start-button').addEventListener('click', () => {
-        document.location.href = `/play?game=${self.crypto.randomUUID()}&token=${self.crypto.randomUUID()}`;
+        document.location.href = `/play?game=${generateGameId()}&token=${self.crypto.randomUUID()}`;
       });
     </script>
   </body>
