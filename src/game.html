@@ -30,6 +30,7 @@
             </div> -->
           <div class="turn-status">
             <span class="streamer player {{streamerTurn}}"></span>
+            <span class="turn-message"></span>
             <span class="chat player {{chatTurn}}"></span>
           </div>
           <div class="game-grid">
@@ -78,12 +79,12 @@
             </label>
           </fieldset>
 
-          <label>
+          <label class="time-for-chat">
             Time for chat's turn (sec)
             <input type="number" name="chat-turn-time" value="{{chatTurnTime}}" />
           </label>
 
-          <label>
+          <label class="games-per-round">
             Games per round
             <input type="number" name="games-per-round" value="{{gamesPerRound}}" />
           </label>

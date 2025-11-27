@@ -17,6 +17,7 @@ const HideClass = 'hide';
 const favicon = document.querySelector("link[rel='icon']");
 const streamer = document.querySelector('.streamer');
 const chat = document.querySelector('.chat');
+const turnMessage = document.querySelector('.turn-message');
 const gridCells = document.querySelectorAll('.grid-cell');
 const squares = document.querySelectorAll('.square');
 const board = document.querySelector('.game-grid');
@@ -208,6 +209,7 @@ function updateGameFromstate(state) {
 
   // Update turn
   if (state.gameOver) {
+    turnMessage.textContent = 'Game Over';
     gridCells.forEach((cell) => (cell.disabled = true));
 
     if (settingsPanel) {
@@ -226,6 +228,17 @@ function updateGameFromstate(state) {
       gridCells[cell[0] * 3 + cell[1]].classList.add(WinnerClass);
     });
   } else {
+    if (isEmbedded) {
+      turnMessage.textContent = '';
+    } else {
+      const isMyTurn = (state.authorized && state.turn === STREAMER) || (!state.authorized && state.turn === CHAT);
+      if (isMyTurn) {
+        turnMessage.textContent = "It's your turn!";
+      } else {
+        turnMessage.textContent = '⏳ Wait for your turn...';
+      }
+    }
+
     if (settingsPanel) {
       restart.disabled = true;
     }
