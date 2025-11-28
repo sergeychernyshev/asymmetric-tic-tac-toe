@@ -33,6 +33,7 @@ const modeSpecificSettings = document.querySelectorAll('.mode-specific');
 // disable UI till next data is received
 let disableUI = false;
 const isEmbedded = new URLSearchParams(window.location.search).get('embed') === 'true';
+let timerInterval = null;
 
 // Function to update visibility of mode-specific settings
 function updateModeSpecificSettingsVisibility() {
@@ -176,6 +177,12 @@ join();
 function updateGameFromstate(state) {
   if (!state || !state.board) return;
 
+  // Clear any existing timer
+  if (timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+
   streamer.classList.remove(XClass, OClass, TurnClass);
   chat.classList.remove(XClass, OClass, TurnClass);
 
@@ -264,6 +271,28 @@ function updateGameFromstate(state) {
         turnMessage.textContent = "It's your turn!";
       } else {
         turnMessage.textContent = '⏳ Wait for your turn...';
+      }
+
+      // Vote mode timer
+      if (state.settings.mode === 'vote' && state.turn === CHAT && state.voteEndTime) {
+        const updateTimer = () => {
+          const now = Date.now();
+          const remainingTime = Math.max(0, Math.ceil((state.voteEndTime - now) / 1000));
+
+          if (remainingTime > 0) {
+            if (state.authorized) {
+              turnMessage.textContent = `Chat is voting! ${remainingTime}s`;
+            } else {
+              turnMessage.textContent = `Vote for your move! ${remainingTime}s`;
+            }
+          } else {
+            turnMessage.textContent = 'Voting ended!';
+            clearInterval(timerInterval);
+            timerInterval = null;
+          }
+        };
+        updateTimer(); // Initial call
+        timerInterval = setInterval(updateTimer, 1000);
       }
     }
 

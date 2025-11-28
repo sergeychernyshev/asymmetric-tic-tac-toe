@@ -289,7 +289,7 @@ export class TicTacToeDO extends DurableObject<Env> {
         for (let r = 0; r < 3; r++) {
           for (let c = 0; c < 3; c++) {
             if (this.state.board[r][c] === 0) {
-              availableMoves.push([r, c]);
+              availableMoves.push([c, r]);
             }
           }
         }
