@@ -52,6 +52,8 @@ const StateSchema = z.object({
   gameOver: z.boolean(), // Is the game over?
   winnerCoordinates: z.array(CoordinatesSchema), // array of coordinate pairs
   settings: SettingsSchema, // game settings
+  votes: z.array(CoordinatesSchema).optional(),
+  voteEndTime: z.number().optional(),
 });
 export type State = z.infer<typeof StateSchema>;
 
@@ -132,6 +134,8 @@ export class TicTacToeDO extends DurableObject<Env> {
       gameOver: false, // Is the game over?
       winnerCoordinates: [], // array of coordinate pairs that make up the winning line
       settings: this.settings,
+      votes: [],
+      voteEndTime: undefined,
     };
 
     if (emptyState.settings.first === Player.STREAMER) {
@@ -249,6 +253,159 @@ export class TicTacToeDO extends DurableObject<Env> {
     return await this.verifyToken(token, storedHash);
   }
 
+  async startVoting() {
+    // only start voting if it is chat's turn and we are in vote mode
+    if (this.state.turn === Player.CHAT && this.settings.mode === GameMode.VOTE) {
+      this.state.votes = [];
+      this.state.voteEndTime = Date.now() + this.settings.chatTurnTime * 1000;
+      await this.storage.setAlarm(this.state.voteEndTime);
+    }
+  }
+
+  async alarm() {
+    // The alarm handler is invoked when the scheduled alarm time is reached.
+    // In this case, it means the voting period has ended.
+    if (this.state.turn === Player.CHAT && this.settings.mode === GameMode.VOTE) {
+      // count votes
+      const voteCounts: Record<string, number> = {};
+      let maxVotes = 0;
+      let winningMove: Coordinates | null = null;
+
+      if (this.state.votes && this.state.votes.length > 0) {
+        for (const move of this.state.votes) {
+          const key = `${move[0]},${move[1]}`;
+          voteCounts[key] = (voteCounts[key] || 0) + 1;
+
+          if (voteCounts[key] > maxVotes) {
+            maxVotes = voteCounts[key];
+            winningMove = move;
+          }
+        }
+      }
+
+      // If no votes, pick a random available cell
+      if (!winningMove) {
+        const availableMoves: Coordinates[] = [];
+        for (let r = 0; r < 3; r++) {
+          for (let c = 0; c < 3; c++) {
+            if (this.state.board[r][c] === 0) {
+              availableMoves.push([r, c]);
+            }
+          }
+        }
+        if (availableMoves.length > 0) {
+          winningMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+        }
+      }
+
+      // Reset voting state
+      this.state.votes = [];
+      this.state.voteEndTime = undefined;
+
+      // Apply the winning move if there is one
+      if (winningMove) {
+        await this.applyMove(winningMove[1], winningMove[0]); // applyMove takes row, col (x, y)
+        // Note: winningMove is [y, x] (col, row) from message.move
+        // applyMove expects (row, col) as per my definition below
+      }
+
+      await this.saveState();
+      this.broadcastState();
+    }
+  }
+
+  async applyMove(row: number, col: number) {
+    // figure out who is the player and which mark to use
+    let mark: Mark;
+    if (this.state.turn === Player.STREAMER) {
+      // streamer made a move
+      mark = this.state.settings.streamerMark;
+    } else {
+      // chat made a move
+      mark = this.state.settings.streamerMark === Mark.X ? Mark.O : Mark.X;
+    }
+
+    // ignore invalide moves
+    if (this.state.board[row][col] !== 0) {
+      console.log('invalid move', row, col);
+      return;
+    }
+
+    // make the game board change
+    this.state.board[row][col] = mark;
+
+    // let the other side make a move next
+    if (this.state.turn === Player.STREAMER) {
+      this.state.turn = Player.CHAT;
+    } else {
+      this.state.turn = Player.STREAMER;
+    }
+
+    // check if the game is over
+    let over = false;
+    let winnerMark = null;
+    // check rows
+    for (let i = 0; i < 3; i++) {
+      if (this.state.board[i][0] !== Mark.X && this.state.board[i][0] !== Mark.O) {
+        continue;
+      }
+
+      if (this.state.board[i][0] === this.state.board[i][1] && this.state.board[i][1] === this.state.board[i][2]) {
+        over = true;
+        winnerMark = this.state.board[i][0];
+        this.state.winnerCoordinates.push([i, 0], [i, 1], [i, 2]);
+      }
+    }
+    // check columns
+    for (let i = 0; i < 3; i++) {
+      if (this.state.board[0][i] !== Mark.X && this.state.board[0][i] !== Mark.O) {
+        continue;
+      }
+      if (this.state.board[0][i] === this.state.board[1][i] && this.state.board[1][i] === this.state.board[2][i]) {
+        over = true;
+        winnerMark = this.state.board[0][i];
+        this.state.winnerCoordinates.push([0, i], [1, i], [2, i]);
+      }
+    }
+    // check diagonals
+    if (this.state.board[1][1] === Mark.X || this.state.board[1][1] === Mark.O) {
+      if (this.state.board[0][0] === this.state.board[1][1] && this.state.board[1][1] === this.state.board[2][2]) {
+        over = true;
+        winnerMark = this.state.board[1][1];
+        this.state.winnerCoordinates.push([0, 0], [1, 1], [2, 2]);
+      }
+      if (this.state.board[0][2] === this.state.board[1][1] && this.state.board[1][1] === this.state.board[2][0]) {
+        over = true;
+        winnerMark = this.state.board[1][1];
+        this.state.winnerCoordinates.push([0, 2], [1, 1], [2, 0]);
+      }
+    }
+
+    if (winnerMark !== null) {
+      if (winnerMark === this.state.settings.streamerMark) {
+        this.state.winner = Player.STREAMER;
+      } else {
+        this.state.winner = Player.CHAT;
+      }
+    }
+
+    // check if the game is a draw
+    if (
+      this.state.board[0].every((cell) => cell !== 0) &&
+      this.state.board[1].every((cell) => cell !== 0) &&
+      this.state.board[2].every((cell) => cell !== 0)
+    ) {
+      over = true;
+    }
+
+    this.state.gameOver = over;
+
+    // After a move, if it is now Chat's turn and mode is VOTE, start voting
+    if (!this.state.gameOver && this.state.turn === Player.CHAT && this.settings.mode === GameMode.VOTE) {
+      await this.startVoting();
+    }
+  }
+
   async webSocketMessage(ws: WebSocket, messageString: ArrayBuffer | string) {
     const token = ws.deserializeAttachment() as string | undefined;
 
@@ -264,6 +421,12 @@ export class TicTacToeDO extends DurableObject<Env> {
       // restart the game
       if (message.restart) {
         this.state = this.getEmptyState();
+
+        // If starting with CHAT turn in VOTE mode, start timer
+        if (this.state.turn === Player.CHAT && this.settings.mode === GameMode.VOTE) {
+          await this.startVoting();
+        }
+
         await this.saveState();
 
         this.broadcastState();
@@ -286,90 +449,33 @@ export class TicTacToeDO extends DurableObject<Env> {
           return;
         }
 
-        // figure out who is the player and which mark to use
-        let mark: Mark;
-        if (this.state.turn === Player.STREAMER) {
-          // streamer made a move
-          mark = this.state.settings.streamerMark;
-        } else {
-          // chat made a move
-          mark = this.state.settings.streamerMark === Mark.X ? Mark.O : Mark.X;
-        }
+        // If it is CHAT's turn and VOTE mode
+        if (this.state.turn === Player.CHAT && this.settings.mode === GameMode.VOTE) {
+          if (token) {
+            // Authenticated user (Streamer) force-move during voting
+            // Check if move is valid first
+            if (this.state.board[x][y] !== 0) {
+              console.log('Streamer tried invalid force move during voting');
+              return;
+            }
 
-        // ignore invalide moves
-        if (this.state.board[x][y] !== 0) {
-          console.log('invalid move', x, y);
-          return;
-        }
-
-        // make the game board change
-        this.state.board[x][y] = mark;
-
-        // let the other side make a move next
-        if (this.state.turn === Player.STREAMER) {
-          this.state.turn = Player.CHAT;
-        } else {
-          this.state.turn = Player.STREAMER;
-        }
-
-        // check if the game is over
-        let over = false;
-        let winnerMark = null;
-        // check rows
-        for (let i = 0; i < 3; i++) {
-          if (this.state.board[i][0] !== Mark.X && this.state.board[i][0] !== Mark.O) {
-            continue;
-          }
-
-          if (this.state.board[i][0] === this.state.board[i][1] && this.state.board[i][1] === this.state.board[i][2]) {
-            over = true;
-            winnerMark = this.state.board[i][0];
-            this.state.winnerCoordinates.push([i, 0], [i, 1], [i, 2]);
-          }
-        }
-        // check columns
-        for (let i = 0; i < 3; i++) {
-          if (this.state.board[0][i] !== Mark.X && this.state.board[0][i] !== Mark.O) {
-            continue;
-          }
-          if (this.state.board[0][i] === this.state.board[1][i] && this.state.board[1][i] === this.state.board[2][i]) {
-            over = true;
-            winnerMark = this.state.board[0][i];
-            this.state.winnerCoordinates.push([0, i], [1, i], [2, i]);
-          }
-        }
-        // check diagonals
-        if (this.state.board[1][1] === Mark.X || this.state.board[1][1] === Mark.O) {
-          if (this.state.board[0][0] === this.state.board[1][1] && this.state.board[1][1] === this.state.board[2][2]) {
-            over = true;
-            winnerMark = this.state.board[1][1];
-            this.state.winnerCoordinates.push([0, 0], [1, 1], [2, 2]);
-          }
-          if (this.state.board[0][2] === this.state.board[1][1] && this.state.board[1][1] === this.state.board[2][0]) {
-            over = true;
-            winnerMark = this.state.board[1][1];
-            this.state.winnerCoordinates.push([0, 2], [1, 1], [2, 0]);
-          }
-        }
-
-        if (winnerMark !== null) {
-          if (winnerMark === this.state.settings.streamerMark) {
-            this.state.winner = Player.STREAMER;
+            // Cancel voting
+            await this.storage.deleteAlarm();
+            this.state.votes = [];
+            this.state.voteEndTime = undefined;
+            // Fall through to applyMove
           } else {
-            this.state.winner = Player.CHAT;
+            // Record vote
+            if (!this.state.votes) this.state.votes = [];
+            this.state.votes.push([y, x]);
+
+            await this.saveState();
+            this.broadcastState();
+            return;
           }
         }
 
-        // check if the game is a draw
-        if (
-          this.state.board[0].every((cell) => cell !== 0) &&
-          this.state.board[1].every((cell) => cell !== 0) &&
-          this.state.board[2].every((cell) => cell !== 0)
-        ) {
-          over = true;
-        }
-
-        this.state.gameOver = over;
+        await this.applyMove(x, y); // x is row, y is col
 
         await this.saveState();
 
@@ -380,6 +486,7 @@ export class TicTacToeDO extends DurableObject<Env> {
       // save settings only if the user is authorized
       if (token && message.settings) {
         const settings = SettingsSchema.parse(message.settings);
+        const oldMode = this.settings.mode;
 
         // if this is the first turn, we need to check if first move setting has changed and update current turn
         if (
@@ -411,6 +518,14 @@ export class TicTacToeDO extends DurableObject<Env> {
         // update the state with new settings
         this.settings = settings;
         this.state.settings = this.settings;
+
+        // If switching to VOTE mode and it is currently CHAT's turn, start voting
+        if (settings.mode === GameMode.VOTE && this.state.turn === Player.CHAT) {
+          if (oldMode !== GameMode.VOTE || !this.state.voteEndTime) {
+            await this.startVoting();
+          }
+        }
+
         await this.saveState();
 
         this.broadcastState();
