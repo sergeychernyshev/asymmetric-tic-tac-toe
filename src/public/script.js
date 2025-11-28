@@ -330,43 +330,47 @@ function updateGameFromstate(state) {
       } else {
         turnMessage.textContent = '⏳ Wait for your turn...';
       }
+    }
 
-      // Vote mode timer
-      if (state.settings.mode === 'vote' && state.turn === CHAT && state.voteEndTime) {
-        progressCircle.classList.remove(HideClass);
-        const updateTimer = () => {
-          const now = Date.now();
-          const remainingTime = Math.max(0, Math.ceil((state.voteEndTime - now) / 1000));
-          const totalTime = state.settings.chatTurnTime;
+    // Vote mode timer
+    if (state.settings.mode === 'vote' && state.turn === CHAT && state.voteEndTime) {
+      progressCircle.classList.remove(HideClass);
+      const updateTimer = () => {
+        const now = Date.now();
+        const remainingTime = Math.max(0, Math.ceil((state.voteEndTime - now) / 1000));
+        const totalTime = state.settings.chatTurnTime;
 
-          if (remainingTime > 0) {
-            turnMessage.textContent = ``;
-
-            progressNumber.textContent = remainingTime;
-
-            // Calculate progress offset
-            // Circumference is ~157
-            // Offset = Circumference * (1 - remaining / total)
-            // But we want it to shrink, so we want the DASH to shrink?
-            // dasharray 157.
-            // offset 0 = full circle.
-            // offset 157 = empty circle.
-            // We want it to go from Full (0) to Empty (157).
-            // So offset = 157 * (1 - remaining / total).
-            const offset = 157 * (1 - remainingTime / totalTime);
-            progressRing.style.strokeDashoffset = offset;
-          } else {
-            turnMessage.textContent = 'Voting ended!';
-            progressCircle.classList.add(HideClass);
-            clearInterval(timerInterval);
-            timerInterval = null;
-          }
-        };
-        updateTimer(); // Initial call
-        timerInterval = setInterval(updateTimer, 1000);
-      } else {
-        progressCircle.classList.add(HideClass);
-      }
+                  if (remainingTime > 0) {
+                    turnMessage.textContent = ``;
+        
+                    progressNumber.textContent = remainingTime;
+                    if (remainingTime.toString().length >= 3) {
+                      progressNumber.classList.add('small-font');
+                    } else {
+                      progressNumber.classList.remove('small-font');
+                    }
+                  // Calculate progress offset
+          // Circumference is ~157
+          // Offset = Circumference * (1 - remaining / total)
+          // But we want it to shrink, so we want the DASH to shrink?
+          // dasharray 157.
+          // offset 0 = full circle.
+          // offset 157 = empty circle.
+          // We want it to go from Full (0) to Empty (157).
+          // So offset = 157 * (1 - remaining / total).
+          const offset = 157 * (1 - remainingTime / totalTime);
+          progressRing.style.strokeDashoffset = offset;
+        } else {
+          turnMessage.textContent = 'Voting ended!';
+          progressCircle.classList.add(HideClass);
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+      };
+      updateTimer(); // Initial call
+      timerInterval = setInterval(updateTimer, 1000);
+    } else {
+      progressCircle.classList.add(HideClass);
     }
 
     if (settingsPanel) {
@@ -432,8 +436,11 @@ function saveSettings(e) {
 
   const formData = new FormData(settingsForm);
   let chatTurnTime = Number.parseInt(formData.get('chat-turn-time'));
+  const minTime = Number.parseInt(chatTurnTimeInput.min);
+  const maxTime = Number.parseInt(chatTurnTimeInput.max);
+
   // Enforce min/max for chatTurnTime
-  chatTurnTime = Math.max(1, Math.min(99, chatTurnTime));
+  chatTurnTime = Math.max(minTime, Math.min(maxTime, chatTurnTime));
 
   const settings = {
     streamerMark: formData.get('streamer-mark'),
@@ -459,10 +466,13 @@ if (settingsPanel) {
   if (chatTurnTimeInput) {
     chatTurnTimeInput.addEventListener('input', (e) => {
       let value = Number.parseInt(e.target.value);
+      const minTime = Number.parseInt(e.target.min);
+      const maxTime = Number.parseInt(e.target.max);
+
       if (isNaN(value)) {
-        value = 1; // Default to min if input is not a number
+        value = minTime; // Default to min if input is not a number
       }
-      e.target.value = Math.max(1, Math.min(99, value));
+      e.target.value = Math.max(minTime, Math.min(maxTime, value));
       settingsChanged(); // Also trigger settingsChanged so save button is enabled
     });
   }

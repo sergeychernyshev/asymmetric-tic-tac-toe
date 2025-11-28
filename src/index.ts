@@ -1,5 +1,5 @@
 import pageTemplate from './game.html';
-import { GameMode, Mark, Player, State, TicTacToeDO } from './do';
+import { CHAT_TURN_TIME_MAX, CHAT_TURN_TIME_MIN, GameMode, Mark, Player, State, TicTacToeDO } from './do';
 
 export { TicTacToeDO } from './do';
 
@@ -100,6 +100,8 @@ export default {
       page = page.replace(/{{modeVote}}/g, `${state.settings.mode === GameMode.VOTE ? 'checked' : ''}`);
 
       page = page.replace(/{{chatTurnTime}}/g, `${state.settings.chatTurnTime}`);
+      page = page.replace(/{{chatTurnTimeMin}}/g, `${CHAT_TURN_TIME_MIN}`);
+      page = page.replace(/{{chatTurnTimeMax}}/g, `${CHAT_TURN_TIME_MAX}`);
       page = page.replace(/{{gamesPerRound}}/g, `${state.settings.gamesPerRound}`);
 
       // links

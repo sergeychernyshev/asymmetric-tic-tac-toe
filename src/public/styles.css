@@ -138,6 +138,10 @@ h1 {
   font-weight: bold;
 }
 
+.progress-circle .number.small-font {
+  font-size: 18px;
+}
+
 .progress-circle svg {
   width: 60px;
   height: 60px;

@@ -34,10 +34,14 @@ type Coordinates = z.infer<typeof CoordinatesSchema>;
 const TokenHashSchema = z.instanceof(ArrayBuffer);
 type TokenHash = z.infer<typeof TokenHashSchema>;
 
+export const CHAT_TURN_TIME_MIN = 1;
+export const CHAT_TURN_TIME_MAX = 300;
+export const CHAT_TURN_TIME_DEFAULT = 15;
+
 const SettingsSchema = z.object({
   first: PlayerSchema, // First move: true = streamer, false = chat
   streamerMark: MarkSchema, // Which mark streamer uses? true = X, false = O
-  chatTurnTime: z.number(), // How long chat has to make a move in seconds
+  chatTurnTime: z.number().min(CHAT_TURN_TIME_MIN).max(CHAT_TURN_TIME_MAX), // How long chat has to make a move in seconds
   gamesPerRound: z.number(), // How many games to play in a row
   mode: GameModeSchema, // Game mode: regular or vote
 });
@@ -79,7 +83,7 @@ export class TicTacToeDO extends DurableObject<Env> {
     this.settings = {
       first: Player.STREAMER, // First move: true = streamer, false = chat
       streamerMark: Mark.X, // Which mark streamer uses? true = X, false = O
-      chatTurnTime: 30, // How long chat has to make a move in seconds
+      chatTurnTime: CHAT_TURN_TIME_DEFAULT, // How long chat has to make a move in seconds
       gamesPerRound: 3, // How many games to play in a row
       mode: GameMode.REGULAR, // Game mode
     };
