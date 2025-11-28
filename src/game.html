@@ -79,12 +79,26 @@
             </label>
           </fieldset>
 
-          <label class="time-for-chat">
+          <fieldset class="radio-group">
+            <legend>Mode</legend>
+
+            <label>
+              <input type="radio" name="mode" value="regular" {{modeRegular}} />
+              Regular
+            </label>
+
+            <label>
+              <input type="radio" name="mode" value="vote" {{modeVote}} />
+              Vote
+            </label>
+          </fieldset>
+
+          <label class="time-for-chat mode-specific mode-vote">
             Time for chat's turn (sec)
             <input type="number" name="chat-turn-time" value="{{chatTurnTime}}" />
           </label>
 
-          <label class="games-per-round">
+          <label class="games-per-round mode-specific">
             Games per round
             <input type="number" name="games-per-round" value="{{gamesPerRound}}" />
           </label>

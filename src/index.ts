@@ -1,5 +1,5 @@
 import pageTemplate from './game.html';
-import { Mark, Player, State, TicTacToeDO } from './do';
+import { GameMode, Mark, Player, State, TicTacToeDO } from './do';
 
 export { TicTacToeDO } from './do';
 
@@ -95,6 +95,9 @@ export default {
 
       page = page.replace(/{{streamerMarkX}}/g, `${state.settings.streamerMark === Mark.X ? 'checked' : ''}`);
       page = page.replace(/{{streamerMarkO}}/g, `${state.settings.streamerMark === Mark.O ? 'checked' : ''}`);
+
+      page = page.replace(/{{modeRegular}}/g, `${state.settings.mode === GameMode.REGULAR ? 'checked' : ''}`);
+      page = page.replace(/{{modeVote}}/g, `${state.settings.mode === GameMode.VOTE ? 'checked' : ''}`);
 
       page = page.replace(/{{chatTurnTime}}/g, `${state.settings.chatTurnTime}`);
       page = page.replace(/{{gamesPerRound}}/g, `${state.settings.gamesPerRound}`);

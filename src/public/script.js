@@ -27,10 +27,29 @@ const sync = document.querySelector('.sync');
 const settingsPanel = document.querySelector('.settings');
 const saveButton = document.querySelector('.save');
 const settingsForm = document.querySelector('.settings form');
+const modeRadioButtons = document.querySelectorAll('input[name="mode"]');
+const modeSpecificSettings = document.querySelectorAll('.mode-specific');
 
 // disable UI till next data is received
 let disableUI = false;
 const isEmbedded = new URLSearchParams(window.location.search).get('embed') === 'true';
+
+// Function to update visibility of mode-specific settings
+function updateModeSpecificSettingsVisibility() {
+  const selectedMode = document.querySelector('input[name="mode"]:checked').value;
+  modeSpecificSettings.forEach(element => {
+    if (element.classList.contains(`mode-${selectedMode}`)) {
+      element.style.display = 'flex';
+    } else {
+      element.style.display = 'none';
+    }
+  });
+}
+
+// Call on load
+if (settingsPanel) {
+  updateModeSpecificSettingsVisibility();
+}
 
 // Copy button event listeners
 document.querySelectorAll('.copy-btn').forEach((btn) => {
@@ -315,6 +334,7 @@ function saveSettings(e) {
     first: formData.get('first-move'),
     gamesPerRound: Number.parseInt(formData.get('games-per-round')),
     chatTurnTime: Number.parseInt(formData.get('chat-turn-time')),
+    mode: formData.get('mode'),
   };
 
   sendMessage({ settings });
@@ -326,4 +346,7 @@ if (settingsPanel) {
   saveButton.addEventListener('click', saveSettings);
   settingsForm.addEventListener('submit', saveSettings);
   settingsForm.addEventListener('change', settingsChanged);
+  modeRadioButtons.forEach(radio => {
+    radio.addEventListener('change', updateModeSpecificSettingsVisibility);
+  });
 }

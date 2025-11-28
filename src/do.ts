@@ -15,6 +15,13 @@ export enum Mark {
 }
 const MarkSchema = z.nativeEnum(Mark);
 
+// game modes
+export enum GameMode {
+  REGULAR = 'regular',
+  VOTE = 'vote',
+}
+const GameModeSchema = z.nativeEnum(GameMode);
+
 const CellValueSchema = z.union([z.number(), MarkSchema]);
 type CellValue = z.infer<typeof CellValueSchema>;
 
@@ -32,6 +39,7 @@ const SettingsSchema = z.object({
   streamerMark: MarkSchema, // Which mark streamer uses? true = X, false = O
   chatTurnTime: z.number(), // How long chat has to make a move in seconds
   gamesPerRound: z.number(), // How many games to play in a row
+  mode: GameModeSchema, // Game mode: regular or vote
 });
 
 type Settings = z.infer<typeof SettingsSchema>;
@@ -69,8 +77,9 @@ export class TicTacToeDO extends DurableObject<Env> {
     this.settings = {
       first: Player.STREAMER, // First move: true = streamer, false = chat
       streamerMark: Mark.X, // Which mark streamer uses? true = X, false = O
-      chatTurnTime: 15, // How long chat has to make a move in seconds
+      chatTurnTime: 30, // How long chat has to make a move in seconds
       gamesPerRound: 3, // How many games to play in a row
+      mode: GameMode.REGULAR, // Game mode
     };
     this.state = this.getEmptyState();
 

@@ -339,6 +339,10 @@ form {
   padding-right: 1em;
 }
 
+.mode-specific {
+  display: none;
+}
+
 .settings input[type='number'] {
   font-size: 1em;
   padding: 0.3em;
@@ -429,9 +433,4 @@ form {
 .sync.hide {
   opacity: 0;
   transition: opacity 1s cubic-bezier(0.64, 0, 0.78, 0);
-}
-
-.settings .time-for-chat,
-.settings .games-per-round {
-  display: none;
 }
