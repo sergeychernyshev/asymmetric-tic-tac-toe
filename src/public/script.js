@@ -38,7 +38,7 @@ let timerInterval = null;
 // Function to update visibility of mode-specific settings
 function updateModeSpecificSettingsVisibility() {
   const selectedMode = document.querySelector('input[name="mode"]:checked').value;
-  modeSpecificSettings.forEach(element => {
+  modeSpecificSettings.forEach((element) => {
     if (element.classList.contains(`mode-${selectedMode}`)) {
       element.style.display = 'flex';
     } else {
@@ -208,7 +208,8 @@ function updateGameFromstate(state) {
 
   // Clear UI
   gridCells.forEach((cell) => {
-    cell.classList.remove(XClass, OClass, WinnerClass);
+    cell.classList.remove(XClass, OClass, WinnerClass, 'vote-mark');
+    cell.style.removeProperty('--vote-opacity');
     cell.disabled = false;
     // Store original title if not already stored
     if (!cell.hasAttribute('data-original-title')) {
@@ -216,6 +217,12 @@ function updateGameFromstate(state) {
     }
     // Restore original title when re-enabling
     cell.title = cell.getAttribute('data-original-title');
+
+    // Remove any existing vote count display
+    const voteCount = cell.querySelector('.vote-count');
+    if (voteCount) {
+      voteCount.remove();
+    }
   });
 
   // Determine if empty cells should be disabled for unauthenticated players when it's not their turn
@@ -240,6 +247,52 @@ function updateGameFromstate(state) {
         gridCells[cellIndex].title = `${originalTitle} - Wait for opponent's turn`;
       }
     }
+  }
+
+  // Display votes if in vote mode and it's chat's turn
+  if (state.settings.mode === 'vote' && state.turn === CHAT && state.votes && state.votes.length > 0) {
+    const voteCounts = {};
+    let maxVotes = 0;
+
+    state.votes.forEach((vote) => {
+      // vote is [col, row] (y, x) from server message.move
+      // But let's verify: in DO applyMove(x, y) where x=row, y=col.
+      // wait, in DO: const [y, x] = message.move; ... votes.push([y, x]);
+      // message.move comes from client: sendMessage({ move: [cellValueX, cellValueY] });
+      // client dataset.x is column index (0,1,2), dataset.y is row index (0,1,2).
+      // So message.move is [col, row].
+      // So vote[0] is col, vote[1] is row.
+      const col = vote[0];
+      const row = vote[1];
+      const key = `${row},${col}`;
+      voteCounts[key] = (voteCounts[key] || 0) + 1;
+      maxVotes = Math.max(maxVotes, voteCounts[key]);
+    });
+
+    Object.keys(voteCounts).forEach((key) => {
+      const [row, col] = key.split(',').map(Number);
+      const cellIndex = row * 3 + col;
+      const cell = gridCells[cellIndex];
+
+      // Only show votes on empty cells
+      if (!cell.classList.contains(XClass) && !cell.classList.contains(OClass)) {
+        cell.classList.add('vote-mark');
+        // Add class for the mark being voted for (Streamer's opponent mark)
+        const voteMark = state.settings.streamerMark === XMark ? OClass : XClass;
+        cell.classList.add(voteMark);
+
+        // Calculate opacity based on vote count relative to max votes
+        // Min opacity 0.2, Max 0.8
+        const opacity = 0.2 + (voteCounts[key] / maxVotes) * 0.4;
+        cell.style.setProperty('--vote-opacity', opacity);
+
+        // Display vote count
+        const countSpan = document.createElement('span');
+        countSpan.className = 'vote-count';
+        countSpan.textContent = voteCounts[key];
+        cell.appendChild(countSpan);
+      }
+    });
   }
 
   // Update turn
@@ -375,7 +428,7 @@ if (settingsPanel) {
   saveButton.addEventListener('click', saveSettings);
   settingsForm.addEventListener('submit', saveSettings);
   settingsForm.addEventListener('change', settingsChanged);
-  modeRadioButtons.forEach(radio => {
+  modeRadioButtons.forEach((radio) => {
     radio.addEventListener('change', updateModeSpecificSettingsVisibility);
   });
 }

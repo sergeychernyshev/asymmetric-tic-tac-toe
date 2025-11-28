@@ -198,6 +198,25 @@ h1 {
   background-color: #ededed;
 }
 
+.grid-cell.vote-mark {
+  position: relative;
+}
+
+.grid-cell.vote-mark::before {
+  opacity: var(--vote-opacity, 0.2);
+  stroke: blue;
+}
+
+.vote-count {
+  position: absolute;
+  bottom: 2px;
+  right: 5px;
+  font-size: 0.8rem;
+  color: blue;
+  font-weight: bold;
+  pointer-events: none; /* Ensure clicks pass through to the button */
+}
+
 .x::before {
   content: url('/x.svg');
   width: 75px;
