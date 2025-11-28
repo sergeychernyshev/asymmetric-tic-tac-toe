@@ -477,3 +477,7 @@ form {
   opacity: 0;
   transition: opacity 1s cubic-bezier(0.64, 0, 0.78, 0);
 }
+
+.settings label.games-per-round {
+  display: none;
+}
