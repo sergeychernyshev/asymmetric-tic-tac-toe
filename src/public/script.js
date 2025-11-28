@@ -18,6 +18,9 @@ const favicon = document.querySelector("link[rel='icon']");
 const streamer = document.querySelector('.streamer');
 const chat = document.querySelector('.chat');
 const turnMessage = document.querySelector('.turn-message');
+const progressCircle = document.querySelector('.progress-circle');
+const progressNumber = document.querySelector('.progress-circle .number');
+const progressRing = document.querySelector('.progress-circle .progress');
 const gridCells = document.querySelectorAll('.grid-cell');
 const squares = document.querySelectorAll('.square');
 const board = document.querySelector('.game-grid');
@@ -29,6 +32,7 @@ const saveButton = document.querySelector('.save');
 const settingsForm = document.querySelector('.settings form');
 const modeRadioButtons = document.querySelectorAll('input[name="mode"]');
 const modeSpecificSettings = document.querySelectorAll('.mode-specific');
+const chatTurnTimeInput = document.querySelector('input[name="chat-turn-time"]');
 
 // disable UI till next data is received
 let disableUI = false;
@@ -298,6 +302,7 @@ function updateGameFromstate(state) {
   // Update turn
   if (state.gameOver) {
     turnMessage.textContent = 'Game Over';
+    progressCircle.classList.add(HideClass);
     gridCells.forEach((cell) => (cell.disabled = true));
 
     if (settingsPanel) {
@@ -328,24 +333,39 @@ function updateGameFromstate(state) {
 
       // Vote mode timer
       if (state.settings.mode === 'vote' && state.turn === CHAT && state.voteEndTime) {
+        progressCircle.classList.remove(HideClass);
         const updateTimer = () => {
           const now = Date.now();
           const remainingTime = Math.max(0, Math.ceil((state.voteEndTime - now) / 1000));
+          const totalTime = state.settings.chatTurnTime;
 
           if (remainingTime > 0) {
-            if (state.authorized) {
-              turnMessage.textContent = `Chat is voting! ${remainingTime}s`;
-            } else {
-              turnMessage.textContent = `Vote for your move! ${remainingTime}s`;
-            }
+            turnMessage.textContent = ``;
+
+            progressNumber.textContent = remainingTime;
+
+            // Calculate progress offset
+            // Circumference is ~157
+            // Offset = Circumference * (1 - remaining / total)
+            // But we want it to shrink, so we want the DASH to shrink?
+            // dasharray 157.
+            // offset 0 = full circle.
+            // offset 157 = empty circle.
+            // We want it to go from Full (0) to Empty (157).
+            // So offset = 157 * (1 - remaining / total).
+            const offset = 157 * (1 - remainingTime / totalTime);
+            progressRing.style.strokeDashoffset = offset;
           } else {
             turnMessage.textContent = 'Voting ended!';
+            progressCircle.classList.add(HideClass);
             clearInterval(timerInterval);
             timerInterval = null;
           }
         };
         updateTimer(); // Initial call
         timerInterval = setInterval(updateTimer, 1000);
+      } else {
+        progressCircle.classList.add(HideClass);
       }
     }
 
@@ -411,11 +431,15 @@ function saveSettings(e) {
   e.preventDefault();
 
   const formData = new FormData(settingsForm);
+  let chatTurnTime = Number.parseInt(formData.get('chat-turn-time'));
+  // Enforce min/max for chatTurnTime
+  chatTurnTime = Math.max(1, Math.min(99, chatTurnTime));
+
   const settings = {
     streamerMark: formData.get('streamer-mark'),
     first: formData.get('first-move'),
     gamesPerRound: Number.parseInt(formData.get('games-per-round')),
-    chatTurnTime: Number.parseInt(formData.get('chat-turn-time')),
+    chatTurnTime,
     mode: formData.get('mode'),
   };
 
@@ -431,4 +455,15 @@ if (settingsPanel) {
   modeRadioButtons.forEach((radio) => {
     radio.addEventListener('change', updateModeSpecificSettingsVisibility);
   });
+
+  if (chatTurnTimeInput) {
+    chatTurnTimeInput.addEventListener('input', (e) => {
+      let value = Number.parseInt(e.target.value);
+      if (isNaN(value)) {
+        value = 1; // Default to min if input is not a number
+      }
+      e.target.value = Math.max(1, Math.min(99, value));
+      settingsChanged(); // Also trigger settingsChanged so save button is enabled
+    });
+  }
 }

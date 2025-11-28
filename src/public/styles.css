@@ -162,6 +162,10 @@ h1 {
   /* 157 * 0.3 to show 70% progress */
 }
 
+.progress-circle.hide {
+  display: none;
+}
+
 .game-board {
   display: flex;
   flex-direction: column;
@@ -264,16 +268,36 @@ h1 {
 
 .turn-status {
   width: 100%;
-  gap: 0.7em;
+  gap: 0.5em; /* Smaller gap for vertical arrangement */
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: row; /* Arrange items vertically */
+  justify-content: space-between; /* Center horizontally in the column */
+  align-items: center; /* Center horizontally in the column */
+  text-align: center; /* Center text within turn-message */
 }
 
 .turn-message {
-  flex-grow: 1;
-  text-align: center;
-  max-width: 8em;
+  flex-grow: 0; /* No longer needs to grow */
+  max-width: none; /* Remove max-width restriction */
+}
+
+.progress-circle {
+  margin: 0; /* Remove auto margins when centrally aligned by flexbox */
+}
+
+.player {
+  /* Ensure players are still horizontally aligned if needed, or adjust based on overall layout */
+  flex-direction: row; /* Keep player elements in a row */
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+}
+
+.turn-progress {
+  display: flex;
+  max-width: 7em;
+  align-items: center;
+  flex-direction: column;
 }
 
 #connection-info {

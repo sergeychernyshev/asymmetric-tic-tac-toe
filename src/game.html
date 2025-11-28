@@ -21,16 +21,18 @@
       <section>
         <div class="game-board">
           <!-- <h1>Tic-Tac-Toe</h1> -->
-          <!-- <div class="progress-circle">
-                <span class="number">10</span>
-                <svg>
-                    <circle class="bg" cx="30" cy="30" r="25"></circle>
-                    <circle class="progress" cx="30" cy="30" r="25"></circle>
-                </svg>
-            </div> -->
           <div class="turn-status">
             <span class="streamer player {{streamerTurn}}"></span>
-            <span class="turn-message"></span>
+            <div class="turn-progress">
+              <span class="turn-message"></span>
+              <div class="progress-circle hide">
+                <span class="number"></span>
+                <svg>
+                  <circle class="bg" cx="30" cy="30" r="25"></circle>
+                  <circle class="progress" cx="30" cy="30" r="25"></circle>
+                </svg>
+              </div>
+            </div>
             <span class="chat player {{chatTurn}}"></span>
           </div>
           <div class="game-grid">
@@ -95,7 +97,7 @@
 
           <label class="time-for-chat mode-specific mode-vote">
             Time for chat's turn (sec)
-            <input type="number" name="chat-turn-time" value="{{chatTurnTime}}" />
+            <input type="number" name="chat-turn-time" value="{{chatTurnTime}}" min="1" max="99" />
           </label>
 
           <label class="games-per-round mode-specific">
