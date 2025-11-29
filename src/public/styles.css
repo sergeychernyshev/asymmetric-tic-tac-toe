@@ -138,6 +138,10 @@ h1 {
   font-weight: bold;
 }
 
+.progress-circle .number.small-font {
+  font-size: 18px;
+}
+
 .progress-circle svg {
   width: 60px;
   height: 60px;
@@ -160,6 +164,10 @@ h1 {
   /* Approximately 2 * PI * 25 (radius) */
   stroke-dashoffset: 47.1;
   /* 157 * 0.3 to show 70% progress */
+}
+
+.progress-circle.hide {
+  display: none;
 }
 
 .game-board {
@@ -196,6 +204,25 @@ h1 {
 .grid-cell[disabled].x:not(.winner),
 .grid-cell[disabled].o:not(.winner) {
   background-color: #ededed;
+}
+
+.grid-cell.vote-mark {
+  position: relative;
+}
+
+.grid-cell.vote-mark::before {
+  opacity: var(--vote-opacity, 0.2);
+  stroke: blue;
+}
+
+.vote-count {
+  position: absolute;
+  bottom: 2px;
+  right: 5px;
+  font-size: 0.8rem;
+  color: blue;
+  font-weight: bold;
+  pointer-events: none; /* Ensure clicks pass through to the button */
 }
 
 .x::before {
@@ -245,16 +272,36 @@ h1 {
 
 .turn-status {
   width: 100%;
-  gap: 0.7em;
+  gap: 0.5em; /* Smaller gap for vertical arrangement */
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: row; /* Arrange items vertically */
+  justify-content: space-between; /* Center horizontally in the column */
+  align-items: center; /* Center horizontally in the column */
+  text-align: center; /* Center text within turn-message */
 }
 
 .turn-message {
-  flex-grow: 1;
-  text-align: center;
-  max-width: 8em;
+  flex-grow: 0; /* No longer needs to grow */
+  max-width: none; /* Remove max-width restriction */
+}
+
+.progress-circle {
+  margin: 0; /* Remove auto margins when centrally aligned by flexbox */
+}
+
+.player {
+  /* Ensure players are still horizontally aligned if needed, or adjust based on overall layout */
+  flex-direction: row; /* Keep player elements in a row */
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+}
+
+.turn-progress {
+  display: flex;
+  max-width: 7em;
+  align-items: center;
+  flex-direction: column;
 }
 
 #connection-info {
@@ -280,6 +327,8 @@ form {
 
 .sync {
   padding: 1em;
+  max-width: 360px;
+  text-align: center;
 }
 
 .settings {
@@ -337,6 +386,10 @@ form {
 
 .settings .radio-group.small label {
   padding-right: 1em;
+}
+
+.mode-specific {
+  display: none;
 }
 
 .settings input[type='number'] {
@@ -431,7 +484,6 @@ form {
   transition: opacity 1s cubic-bezier(0.64, 0, 0.78, 0);
 }
 
-.settings .time-for-chat,
-.settings .games-per-round {
+.settings label.games-per-round {
   display: none;
 }
