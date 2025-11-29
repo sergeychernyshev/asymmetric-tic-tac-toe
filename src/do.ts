@@ -58,6 +58,7 @@ const StateSchema = z.object({
   settings: SettingsSchema, // game settings
   votes: z.array(CoordinatesSchema).optional(),
   voteEndTime: z.number().optional(),
+  voters: z.record(z.string(), CoordinatesSchema).optional(), // map of sessionId -> [col, row]
 });
 export type State = z.infer<typeof StateSchema>;
 
@@ -140,6 +141,7 @@ export class TicTacToeDO extends DurableObject<Env> {
       settings: this.settings,
       votes: [],
       voteEndTime: undefined,
+      voters: {},
     };
 
     if (emptyState.settings.first === Player.STREAMER) {
@@ -168,7 +170,10 @@ export class TicTacToeDO extends DurableObject<Env> {
     if (token && (await this.checkToken(token))) {
       // If the token is valid, we can record it as an attachment to the WebSocket.
       // This will allow us to retrieve it later in the `webSocketMessage()` handler.
-      server.serializeAttachment(token);
+      server.serializeAttachment({ token });
+    } else {
+      // Assign a random session ID to unauthenticated users
+      server.serializeAttachment({ sessionId: crypto.randomUUID() });
     }
 
     // Calling `acceptWebSocket()` informs the runtime that this WebSocket is to begin terminating
@@ -195,7 +200,8 @@ export class TicTacToeDO extends DurableObject<Env> {
   }
 
   private sendState(ws: WebSocket) {
-    const token = ws.deserializeAttachment() as string | undefined;
+    const attachment = ws.deserializeAttachment() as { token?: string; sessionId?: string } | null;
+    const token = attachment?.token;
     const msg = { ...this.state, authorized: !!token };
 
     try {
@@ -261,6 +267,7 @@ export class TicTacToeDO extends DurableObject<Env> {
     // only start voting if it is chat's turn and we are in vote mode
     if (this.state.turn === Player.CHAT && this.settings.mode === GameMode.VOTE) {
       this.state.votes = [];
+      this.state.voters = {}; // Reset voters
       this.state.voteEndTime = Date.now() + this.settings.chatTurnTime * 1000;
       await this.storage.setAlarm(this.state.voteEndTime);
     }
@@ -304,6 +311,7 @@ export class TicTacToeDO extends DurableObject<Env> {
 
       // Reset voting state
       this.state.votes = [];
+      this.state.voters = {}; // Reset voters
       this.state.voteEndTime = undefined;
 
       // Apply the winning move if there is one
@@ -411,7 +419,9 @@ export class TicTacToeDO extends DurableObject<Env> {
   }
 
   async webSocketMessage(ws: WebSocket, messageString: ArrayBuffer | string) {
-    const token = ws.deserializeAttachment() as string | undefined;
+    const attachment = ws.deserializeAttachment() as { token?: string; sessionId?: string } | null;
+    const token = attachment?.token;
+    const sessionId = attachment?.sessionId;
 
     if (typeof messageString === 'string') {
       const message = JSON.parse(messageString);
@@ -466,12 +476,22 @@ export class TicTacToeDO extends DurableObject<Env> {
             // Cancel voting
             await this.storage.deleteAlarm();
             this.state.votes = [];
+            this.state.voters = {}; // Reset voters
             this.state.voteEndTime = undefined;
             // Fall through to applyMove
           } else {
             // Record vote
-            if (!this.state.votes) this.state.votes = [];
-            this.state.votes.push([y, x]);
+            if (!this.state.voters) this.state.voters = {};
+            if (sessionId) {
+              this.state.voters[sessionId] = [y, x];
+
+              // Rebuild votes array from voters map
+              this.state.votes = Object.values(this.state.voters);
+            } else {
+              // Fallback for connections without sessionId (shouldn't happen with new logic)
+              if (!this.state.votes) this.state.votes = [];
+              this.state.votes.push([y, x]);
+            }
 
             await this.saveState();
             this.broadcastState();
