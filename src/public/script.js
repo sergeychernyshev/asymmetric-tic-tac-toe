@@ -123,7 +123,16 @@ let currentWebSocket = null;
 function join() {
   // If we are running via wrangler dev, use ws:
   const wss = document.location.protocol === 'http:' ? 'ws://' : 'wss://';
-  let ws = new WebSocket(`${wss}${window.location.hostname}:${window.location.port}/websocket${window.location.search}`);
+  let wsUrl = `${wss}${window.location.hostname}:${window.location.port}/websocket${window.location.search}`;
+  
+  const sessionId = localStorage.getItem('sessionId');
+  if (sessionId) {
+    // Append sessionId to URL. Check if it already has params.
+    const separator = wsUrl.includes('?') ? '&' : '?';
+    wsUrl += `${separator}sessionId=${sessionId}`;
+  }
+
+  let ws = new WebSocket(wsUrl);
   let rejoined = false;
   let startTime = Date.now();
 
@@ -157,6 +166,10 @@ function join() {
   ws.addEventListener('message', (event) => {
     state = JSON.parse(event.data);
     // console.log('Received game state from server:', state);
+
+    if (state.sessionId) {
+      localStorage.setItem('sessionId', state.sessionId);
+    }
 
     // Convert the server's 2D board to our game format
     updateGameFromstate(state);

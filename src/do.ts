@@ -166,14 +166,18 @@ export class TicTacToeDO extends DurableObject<Env> {
 
     const url = new URL(request.url);
     const token = url.searchParams.get('token');
+    let sessionId = url.searchParams.get('sessionId');
 
     if (token && (await this.checkToken(token))) {
       // If the token is valid, we can record it as an attachment to the WebSocket.
       // This will allow us to retrieve it later in the `webSocketMessage()` handler.
       server.serializeAttachment({ token });
     } else {
-      // Assign a random session ID to unauthenticated users
-      server.serializeAttachment({ sessionId: crypto.randomUUID() });
+      // Assign a random session ID to unauthenticated users if not provided
+      if (!sessionId) {
+        sessionId = crypto.randomUUID();
+      }
+      server.serializeAttachment({ sessionId });
     }
 
     // Calling `acceptWebSocket()` informs the runtime that this WebSocket is to begin terminating
@@ -202,7 +206,8 @@ export class TicTacToeDO extends DurableObject<Env> {
   private sendState(ws: WebSocket) {
     const attachment = ws.deserializeAttachment() as { token?: string; sessionId?: string } | null;
     const token = attachment?.token;
-    const msg = { ...this.state, authorized: !!token };
+    const sessionId = attachment?.sessionId;
+    const msg = { ...this.state, authorized: !!token, sessionId };
 
     try {
       ws.send(JSON.stringify(msg));
