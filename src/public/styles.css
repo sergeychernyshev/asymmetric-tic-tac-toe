@@ -327,6 +327,8 @@ form {
 
 .sync {
   padding: 1em;
+  max-width: 360px;
+  text-align: center;
 }
 
 .settings {
