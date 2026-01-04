@@ -14,13 +14,36 @@ export default {
    */
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-    const requestPath = url.pathname;
+    const pathParts = url.pathname.split('/').filter((p) => p);
 
-    let gameID = url.searchParams.get('game');
+    let gameID: string | null = null;
+    let token: string | null = null;
+    let isWebsocket = false;
+    let isEmbed = false;
+
+    // 1. Check for WebSocket request via query params (standard /websocket route)
+    if (pathParts.length > 0 && pathParts[0] === 'websocket') {
+      isWebsocket = true;
+      gameID = url.searchParams.get('game');
+      token = url.searchParams.get('token');
+    }
+    // 2. Check for path-based routing (e.g., /ABC-123)
+    else if (pathParts.length > 0 && pathParts[0].match(/^[a-zA-Z]{3}-[0-9]{3}$/)) {
+      gameID = pathParts[0].toUpperCase();
+
+      if (pathParts.length > 1) {
+        if (pathParts[1] === 'embed') {
+          isEmbed = true;
+        } else {
+          token = pathParts[1];
+        }
+      }
+    }
+
     if (gameID !== null) {
       gameID = gameID.toUpperCase();
     }
-    if (gameID === null || !gameID.match(/^[A-Z]{3}-[0-9]{3}$/)) {
+    if (!gameID || !gameID.match(/^[A-Z]{3}-[0-9]{3}$/)) {
       gameID = '';
     }
 
@@ -31,12 +54,11 @@ export default {
     let stub: DurableObjectStub<TicTacToeDO> = env.TIC_TAC_TOE_DO.get(id);
 
     // if token is provided, check if it is valid
-    const token = url.searchParams.get('token');
     if (token !== null && !(await stub.checkToken(token))) {
       return new Response('Invalid token', { status: 403 });
     }
 
-    if (gameID && requestPath.endsWith('/play')) {
+    if (gameID && !isWebsocket) {
       let headers = new Headers();
       headers.set('Content-type', 'text/html; charset=utf-8');
       headers.set('Cache-control', 'no-store');
@@ -105,28 +127,17 @@ export default {
       page = page.replace(/{{gamesPerRound}}/g, `${state.settings.gamesPerRound}`);
 
       // links
-      const baseUrl = `${url.origin}${url.pathname}?game=${gameID}`;
+      const chatLink = `${url.origin}/${gameID}`;
+      page = page.replace(/{{chatLink}}/g, chatLink);
 
-      const chatUrl = new URL(baseUrl);
-      chatUrl.searchParams.delete('token');
-      page = page.replace(/{{chatLink}}/g, chatUrl.href);
+      const embedLink = `${url.origin}/${gameID}/embed`;
+      page = page.replace(/{{embedLink}}/g, embedLink);
 
-      const embedUrl = new URL(baseUrl);
-      embedUrl.searchParams.delete('token');
-      embedUrl.searchParams.set('embed', 'true');
-      page = page.replace(/{{embedLink}}/g, embedUrl.href);
+      const streamerLink = token ? `${url.origin}/${gameID}/${token}` : chatLink;
+      page = page.replace(/{{streamerLink}}/g, streamerLink);
 
-      const streamerUrl = new URL(baseUrl);
-      if (token) {
-        streamerUrl.searchParams.set('token', token);
-      }
-      page = page.replace(/{{streamerLink}}/g, streamerUrl.href);
-
-      const streamerDisplayUrl = new URL(baseUrl);
-      if (token) {
-        streamerDisplayUrl.searchParams.set('token', '*****');
-      }
-      page = page.replace(/{{streamerDisplayLink}}/g, streamerDisplayUrl.href);
+      const streamerDisplayLink = token ? `${url.origin}/${gameID}/*****` : chatLink;
+      page = page.replace(/{{streamerDisplayLink}}/g, streamerDisplayLink);
 
       // Remove settings and links panels if not authorized
       if (!token) {
@@ -141,7 +152,7 @@ export default {
     /**
      * Web Socket server for UI passing requests over to DO
      */
-    if (requestPath.startsWith('/websocket')) {
+    if (isWebsocket) {
       // Expect to receive a WebSocket Upgrade request.
       // If there is one, accept the request and return a WebSocket Response.
       const upgradeHeader = request.headers.get('Upgrade');

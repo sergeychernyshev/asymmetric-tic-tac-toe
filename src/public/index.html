@@ -47,14 +47,14 @@
       }
 
       document.querySelector('.start-button').addEventListener('click', () => {
-        document.location.href = `/play?game=${generateGameId()}&token=${self.crypto.randomUUID()}`;
+        document.location.href = `/${generateGameId()}/${self.crypto.randomUUID()}`;
       });
 
       document.querySelector('.join-game').addEventListener('submit', (e) => {
         e.preventDefault();
         const gameId = document.getElementById('game-id').value.toUpperCase();
         if (gameId) {
-          document.location.href = `/play?game=${gameId}`;
+          document.location.href = `/${gameId}`;
         }
       });
     </script>

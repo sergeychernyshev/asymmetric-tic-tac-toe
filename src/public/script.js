@@ -36,7 +36,7 @@ const chatTurnTimeInput = document.querySelector('input[name="chat-turn-time"]')
 
 // disable UI till next data is received
 let disableUI = false;
-const isEmbedded = new URLSearchParams(window.location.search).get('embed') === 'true';
+const isEmbedded = window.location.pathname.includes('/embed');
 let timerInterval = null;
 
 // Function to update visibility of mode-specific settings
@@ -123,13 +123,20 @@ let currentWebSocket = null;
 function join() {
   // If we are running via wrangler dev, use ws:
   const wss = document.location.protocol === 'http:' ? 'ws://' : 'wss://';
-  let wsUrl = `${wss}${window.location.hostname}:${window.location.port}/websocket${window.location.search}`;
+  
+  const pathParts = window.location.pathname.split('/').filter((p) => p);
+  const gameID = pathParts[0];
+  const token = pathParts.length > 1 && pathParts[1] !== 'embed' ? pathParts[1] : null;
+
+  let wsUrl = `${wss}${window.location.hostname}:${window.location.port}/websocket?game=${gameID}`;
+
+  if (token) {
+    wsUrl += `&token=${token}`;
+  }
 
   const sessionId = localStorage.getItem('sessionId');
   if (sessionId) {
-    // Append sessionId to URL. Check if it already has params.
-    const separator = wsUrl.includes('?') ? '&' : '?';
-    wsUrl += `${separator}sessionId=${sessionId}`;
+    wsUrl += `&sessionId=${sessionId}`;
   }
 
   let ws = new WebSocket(wsUrl);
