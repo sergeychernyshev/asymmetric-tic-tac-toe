@@ -49,76 +49,75 @@
         </div>
         <div class="sync hide">Please wait for you turn to sync...</div>
       </section>
-      <section class="settings">
-        <button class="restart" disabled>Restart Game</button>
 
-        <h2>Settings</h2>
-        <form>
-          <fieldset class="radio-group">
-            <legend>First move</legend>
+      <div>
+        <section class="share">
+          Share/Invite:
+          <a id="chat-link" href="{{chatLink}}" target="_blank" rel="noopener noreferrer"><span id="game-id-display">{{gameId}}</span></a>
+          <button class="copy-btn" data-target="chat-link" aria-label="Copy Chat Link" title="Click to copy URL">📋</button>
+        </section>
 
-            <label>
-              <input type="radio" name="first-move" value="streamer" {{firstMoveStreamer}} />
-              Streamer
+        <section class="settings">
+          <button class="restart" disabled>Restart Game</button>
+
+          <h2>Settings</h2>
+          <form>
+            <fieldset class="radio-group">
+              <legend>First move</legend>
+
+              <label>
+                <input type="radio" name="first-move" value="streamer" {{firstMoveStreamer}} />
+                Streamer
+              </label>
+              <label>
+                <input type="radio" name="first-move" value="chat" {{firstMoveChat}} />
+                Chat
+              </label>
+            </fieldset>
+
+            <fieldset class="radio-group small">
+              <legend>Streamer's mark</legend>
+
+              <label>
+                <input type="radio" name="streamer-mark" value="X" {{streamerMarkX}} />
+                X
+              </label>
+
+              <label>
+                <input type="radio" name="streamer-mark" value="O" {{streamerMarkO}} />
+                O
+              </label>
+            </fieldset>
+
+            <fieldset class="radio-group">
+              <legend>Mode</legend>
+
+              <label>
+                <input type="radio" name="mode" value="regular" {{modeRegular}} />
+                Regular
+              </label>
+
+              <label>
+                <input type="radio" name="mode" value="vote" {{modeVote}} />
+                Vote
+              </label>
+            </fieldset>
+
+            <label class="time-for-chat mode-specific mode-vote">
+              Time for chat's turn (sec)
+              <input type="number" name="chat-turn-time" value="{{chatTurnTime}}" min="{{chatTurnTimeMin}}" max="{{chatTurnTimeMax}}" />
             </label>
-            <label>
-              <input type="radio" name="first-move" value="chat" {{firstMoveChat}} />
-              Chat
-            </label>
-          </fieldset>
 
-          <fieldset class="radio-group small">
-            <legend>Streamer's mark</legend>
-
-            <label>
-              <input type="radio" name="streamer-mark" value="X" {{streamerMarkX}} />
-              X
+            <label class="games-per-round">
+              Games per round
+              <input type="number" name="games-per-round" value="{{gamesPerRound}}" />
             </label>
 
-            <label>
-              <input type="radio" name="streamer-mark" value="O" {{streamerMarkO}} />
-              O
-            </label>
-          </fieldset>
-
-          <fieldset class="radio-group">
-            <legend>Mode</legend>
-
-            <label>
-              <input type="radio" name="mode" value="regular" {{modeRegular}} />
-              Regular
-            </label>
-
-            <label>
-              <input type="radio" name="mode" value="vote" {{modeVote}} />
-              Vote
-            </label>
-          </fieldset>
-
-          <label class="time-for-chat mode-specific mode-vote">
-            Time for chat's turn (sec)
-            <input type="number" name="chat-turn-time" value="{{chatTurnTime}}" min="{{chatTurnTimeMin}}" max="{{chatTurnTimeMax}}" />
-          </label>
-
-          <label class="games-per-round">
-            Games per round
-            <input type="number" name="games-per-round" value="{{gamesPerRound}}" />
-          </label>
-
-          <button class="save" disabled>Save Settings</button>
-        </form>
-      </section>
+            <button class="save" disabled>Save Settings</button>
+          </form>
+        </section>
+      </div>
     </main>
-    <section class="links-panel">
-      <div>
-        <strong>Game ID:</strong> <span id="game-id-display">{{gameId}}</span>
-        <button class="copy-btn" data-target="game-id-display" aria-label="Copy Game ID" title="Click to copy Game ID">📋</button>
-      </div>
-      <div>
-        <strong>Game Link:</strong> <a id="chat-link" href="{{chatLink}}" target="_blank" rel="noopener noreferrer">{{chatLink}}</a>
-        <button class="copy-btn" data-target="chat-link" aria-label="Copy Chat Link" title="Click to copy URL">📋</button>
-      </div>
-    </section>
     <section class="links-panel">
       <div>
         <strong>Embed:</strong> <a id="embed-link" href="{{embedLink}}" target="_blank" rel="noopener noreferrer">{{embedLink}}</a>

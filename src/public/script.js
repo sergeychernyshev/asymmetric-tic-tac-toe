@@ -124,7 +124,7 @@ function join() {
   // If we are running via wrangler dev, use ws:
   const wss = document.location.protocol === 'http:' ? 'ws://' : 'wss://';
   let wsUrl = `${wss}${window.location.hostname}:${window.location.port}/websocket${window.location.search}`;
-  
+
   const sessionId = localStorage.getItem('sessionId');
   if (sessionId) {
     // Append sessionId to URL. Check if it already has params.
@@ -353,16 +353,16 @@ function updateGameFromstate(state) {
         const remainingTime = Math.max(0, Math.ceil((state.voteEndTime - now) / 1000));
         const totalTime = state.settings.chatTurnTime;
 
-                  if (remainingTime > 0) {
-                    turnMessage.textContent = ``;
-        
-                    progressNumber.textContent = remainingTime;
-                    if (remainingTime.toString().length >= 3) {
-                      progressNumber.classList.add('small-font');
-                    } else {
-                      progressNumber.classList.remove('small-font');
-                    }
-                  // Calculate progress offset
+        if (remainingTime > 0) {
+          turnMessage.textContent = ``;
+
+          progressNumber.textContent = remainingTime;
+          if (remainingTime.toString().length >= 3) {
+            progressNumber.classList.add('small-font');
+          } else {
+            progressNumber.classList.remove('small-font');
+          }
+          // Calculate progress offset
           // Circumference is ~157
           // Offset = Circumference * (1 - remaining / total)
           // But we want it to shrink, so we want the DASH to shrink?

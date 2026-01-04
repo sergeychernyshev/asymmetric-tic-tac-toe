@@ -130,6 +130,7 @@ export default {
 
       // Remove settings and links panels if not authorized
       if (!token) {
+        page = page.replace(/<section class="share">[\s\S]*?<\/section>/g, '');
         page = page.replace(/<section class="settings">[\s\S]*?<\/section>/g, '');
         page = page.replace(/<section class="links-panel">[\s\S]*?<\/section>/g, '');
       }
