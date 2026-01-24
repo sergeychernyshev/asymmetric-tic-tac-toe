@@ -1,4 +1,6 @@
-export function renderIndex(providers: { name: string; url: string; class: string }[]): string {
+import { UserProfile } from '../auth';
+
+export function renderIndex(providers: { name: string; url: string; class: string }[], user: UserProfile | null): string {
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -17,10 +19,15 @@ export function renderIndex(providers: { name: string; url: string; class: strin
     <section class="start-game">
       <h1>Tic-Tac-Toe</h1>
 
-      <div id="user-info" style="display: none; margin-bottom: 20px; text-align: center">
-        <p>Welcome, <span id="user-name" style="font-weight: bold"></span>!</p>
-        <a href="/auth/logout" class="logout-link">Logout</a>
+      ${
+        user
+          ? `
+      <div id="user-info" style="margin-bottom: 20px; text-align: center">
+        Welcome, <span id="user-name" style="font-weight: bold">${user.name}</span>! <a href="/auth/logout" class="logout-link">Logout</a>
       </div>
+      `
+          : ''
+      }
 
       <form class="join-game">
         <label for="game-id">Join Existing Game</label>
@@ -33,9 +40,8 @@ export function renderIndex(providers: { name: string; url: string; class: strin
       <button class="start-button">Start New Game</button>
 
       ${
-        providers && providers.length > 0
+        !user && providers && providers.length > 0
           ? `
-
       <div class="divider">Or Login With</div>
 
       <div class="auth-section">
@@ -77,22 +83,6 @@ export function renderIndex(providers: { name: string; url: string; class: strin
           document.location.href = \`/\${gameId}\`;
         }
       });
-
-      // Check auth status
-      fetch('/api/me')
-        .then((res) => {
-          if (res.ok) return res.json();
-          throw new Error('Not logged in');
-        })
-        .then((user) => {
-          document.getElementById('user-info').style.display = 'block';
-          document.getElementById('user-name').textContent = user.name;
-          document.querySelector('.auth-section').style.display = 'none';
-          document.querySelector('.divider').style.display = 'none';
-        })
-        .catch((err) => {
-          // Not logged in, default state is fine
-        });
     </script>
   </body>
 </html>`;

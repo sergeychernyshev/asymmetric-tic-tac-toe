@@ -23,16 +23,16 @@ export default {
       return handleAuth(request, env);
     }
 
-    // API Routes
-    if (pathParts.length > 1 && pathParts[0] === 'api' && pathParts[1] === 'me') {
-      const user = await verifySession(request, env);
-      if (user) {
-        return new Response(JSON.stringify(user), {
-          headers: { 'Content-Type': 'application/json' },
-        });
-      }
-      return new Response('Unauthorized', { status: 401 });
-    }
+    // // API Routes
+    // if (pathParts.length > 1 && pathParts[0] === 'api' && pathParts[1] === 'me') {
+    //   const user = await verifySession(request, env);
+    //   if (user) {
+    //     return new Response(JSON.stringify(user), {
+    //       headers: { 'Content-Type': 'application/json' },
+    //     });
+    //   }
+    //   return new Response('Unauthorized', { status: 401 });
+    // }
 
     let gameID: string | null = null;
     let token: string | null = null;
@@ -62,7 +62,8 @@ export default {
       if (env.TWITCH_CLIENT_ID) providers.push({ name: 'Twitch', url: '/auth/twitch', class: 'twitch' });
       if (env.LINKEDIN_CLIENT_ID) providers.push({ name: 'LinkedIn', url: '/auth/linkedin', class: 'linkedin' });
 
-      const html = renderIndex(providers);
+      const user = await verifySession(request, env);
+      const html = renderIndex(providers, user);
 
       return new Response(html, {
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
