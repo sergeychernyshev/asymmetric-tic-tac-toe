@@ -100,15 +100,13 @@ export default {
       if (state.settings.streamerMark === Mark.X) {
         if (state.turn === Player.STREAMER) {
           favicon = '/x-favicon.png';
-        }
-        else {
+        } else {
           favicon = '/o-favicon.png';
         }
       } else {
         if (state.turn === Player.CHAT) {
           favicon = '/x-favicon.png';
-        }
-        else {
+        } else {
           favicon = '/o-favicon.png';
         }
       }
@@ -140,7 +138,7 @@ export default {
         embedLink,
         streamerLink,
         streamerDisplayLink,
-        token
+        token,
       );
 
       return new Response(html, { headers });

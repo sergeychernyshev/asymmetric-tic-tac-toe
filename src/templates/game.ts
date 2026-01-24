@@ -10,7 +10,7 @@ export function renderGame(
   embedLink: string,
   streamerLink: string,
   streamerDisplayLink: string,
-  token: string | null
+  token: string | null,
 ): string {
   const getCellClass = (row: number, col: number) => {
     const val = state.board[row][col];

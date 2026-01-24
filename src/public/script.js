@@ -123,7 +123,7 @@ let currentWebSocket = null;
 function join() {
   // If we are running via wrangler dev, use ws:
   const wss = document.location.protocol === 'http:' ? 'ws://' : 'wss://';
-  
+
   const pathParts = window.location.pathname.split('/').filter((p) => p);
   const gameID = pathParts[0];
   const token = pathParts.length > 1 && pathParts[1] !== 'embed' ? pathParts[1] : null;

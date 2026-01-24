@@ -18,12 +18,13 @@ This project supports user authentication via Google, Twitch, and LinkedIn. To e
 You only need to configure the providers you wish to support.
 
 #### 1. Google
+
 1.  Go to the [Google Cloud Console](https://console.cloud.google.com/).
 2.  Create a project and configure the **OAuth consent screen**.
 3.  Create **OAuth Client ID** credentials (Web Application).
 4.  Add authorized redirect URIs:
-    *   Local: `http://localhost:8787/auth/google/callback`
-    *   Production: `https://<your-worker>.workers.dev/auth/google/callback`
+    - Local: `http://localhost:8787/auth/google/callback`
+    - Production: `https://<your-worker>.workers.dev/auth/google/callback`
 5.  Set the secrets:
     ```bash
     npx wrangler secret put GOOGLE_CLIENT_ID
@@ -31,11 +32,12 @@ You only need to configure the providers you wish to support.
     ```
 
 #### 2. Twitch
+
 1.  Go to the [Twitch Developer Console](https://dev.twitch.tv/console).
 2.  Register your application.
 3.  Add OAuth Redirect URLs:
-    *   Local: `http://localhost:8787/auth/twitch/callback`
-    *   Production: `https://<your-worker>.workers.dev/auth/twitch/callback`
+    - Local: `http://localhost:8787/auth/twitch/callback`
+    - Production: `https://<your-worker>.workers.dev/auth/twitch/callback`
 4.  Set the secrets:
     ```bash
     npx wrangler secret put TWITCH_CLIENT_ID
@@ -43,11 +45,12 @@ You only need to configure the providers you wish to support.
     ```
 
 #### 3. LinkedIn
+
 1.  Go to [LinkedIn Developers](https://www.linkedin.com/developers/).
 2.  Create an app and add the "Sign In with LinkedIn using OpenID Connect" product.
 3.  Configure Authorized Redirect URLs:
-    *   Local: `http://localhost:8787/auth/linkedin/callback`
-    *   Production: `https://<your-worker>.workers.dev/auth/linkedin/callback`
+    - Local: `http://localhost:8787/auth/linkedin/callback`
+    - Production: `https://<your-worker>.workers.dev/auth/linkedin/callback`
 4.  Set the secrets:
     ```bash
     npx wrangler secret put LINKEDIN_CLIENT_ID

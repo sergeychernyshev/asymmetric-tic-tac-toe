@@ -34,7 +34,6 @@ const LinkedInUserSchema = z.object({
   picture: z.string().optional(),
 });
 
-
 export const GoogleProvider: AuthProvider = {
   name: 'google',
   getAuthUrl(env: Env, state: string, origin: string) {
@@ -69,19 +68,19 @@ export const GoogleProvider: AuthProvider = {
     });
 
     if (!tokenResponse.ok) {
-        const errorText = await tokenResponse.text();
-        console.error('Google token error:', errorText);
-        throw new Error(`Failed to exchange code: ${tokenResponse.statusText}`);
+      const errorText = await tokenResponse.text();
+      console.error('Google token error:', errorText);
+      throw new Error(`Failed to exchange code: ${tokenResponse.statusText}`);
     }
 
-    const tokenData = await tokenResponse.json() as { access_token: string, id_token: string };
-    
+    const tokenData = (await tokenResponse.json()) as { access_token: string; id_token: string };
+
     // We can use id_token or fetch userinfo. Fetching userinfo is safer/easier if we don't want to validate JWT signature locally (though we should).
     // For simplicity in this worker, we'll hit the userinfo endpoint.
     const userResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
-    
+
     if (!userResponse.ok) throw new Error('Failed to fetch user info');
 
     const userData = GoogleUserSchema.parse(await userResponse.json());
@@ -110,7 +109,7 @@ export const TwitchProvider: AuthProvider = {
   },
   async getUser(env: Env, code: string, origin: string): Promise<UserProfile> {
     if (!env.TWITCH_CLIENT_ID || !env.TWITCH_CLIENT_SECRET) throw new Error('Twitch env vars not set');
-    
+
     const tokenResponse = await fetch('https://id.twitch.tv/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -124,20 +123,20 @@ export const TwitchProvider: AuthProvider = {
     });
 
     if (!tokenResponse.ok) throw new Error('Failed to exchange code');
-    const tokenData = await tokenResponse.json() as { access_token: string };
+    const tokenData = (await tokenResponse.json()) as { access_token: string };
 
     const userResponse = await fetch('https://api.twitch.tv/helix/users', {
       headers: {
-        'Authorization': `Bearer ${tokenData.access_token}`,
+        Authorization: `Bearer ${tokenData.access_token}`,
         'Client-Id': env.TWITCH_CLIENT_ID,
       },
     });
 
     if (!userResponse.ok) throw new Error('Failed to fetch user info');
-    
-    const data = await userResponse.json() as { data: any[] };
+
+    const data = (await userResponse.json()) as { data: any[] };
     if (!data.data || data.data.length === 0) throw new Error('No user data found');
-    
+
     const userData = TwitchUserSchema.parse(data.data[0]);
 
     return {
@@ -166,22 +165,22 @@ export const LinkedInProvider: AuthProvider = {
     if (!env.LINKEDIN_CLIENT_ID || !env.LINKEDIN_CLIENT_SECRET) throw new Error('LinkedIn env vars not set');
 
     const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-            grant_type: 'authorization_code',
-            code,
-            client_id: env.LINKEDIN_CLIENT_ID,
-            client_secret: env.LINKEDIN_CLIENT_SECRET,
-            redirect_uri: `${origin}/auth/linkedin/callback`,
-        }),
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        code,
+        client_id: env.LINKEDIN_CLIENT_ID,
+        client_secret: env.LINKEDIN_CLIENT_SECRET,
+        redirect_uri: `${origin}/auth/linkedin/callback`,
+      }),
     });
 
     if (!tokenResponse.ok) throw new Error('Failed to exchange code');
-    const tokenData = await tokenResponse.json() as { access_token: string };
+    const tokenData = (await tokenResponse.json()) as { access_token: string };
 
     const userResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
-        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
 
     if (!userResponse.ok) throw new Error('Failed to fetch user info');
@@ -189,14 +188,13 @@ export const LinkedInProvider: AuthProvider = {
     const userData = LinkedInUserSchema.parse(await userResponse.json());
 
     return {
-        id: userData.sub,
-        email: userData.email,
-        name: userData.name,
-        provider: 'linkedin',
+      id: userData.sub,
+      email: userData.email,
+      name: userData.name,
+      provider: 'linkedin',
     };
   },
 };
-
 
 const providers: Record<string, AuthProvider> = {
   google: GoogleProvider,
@@ -206,23 +204,29 @@ const providers: Record<string, AuthProvider> = {
 
 export async function handleAuth(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
-  const pathParts = url.pathname.split('/').filter(p => p);
-  
+  const pathParts = url.pathname.split('/').filter((p) => p);
+
   const isAnyProviderConfigured = !!(env.GOOGLE_CLIENT_ID || env.TWITCH_CLIENT_ID || env.LINKEDIN_CLIENT_ID);
 
-  if (isAnyProviderConfigured && (!env.SESSION_SECRET || env.SESSION_SECRET === 'replace-with-secure-random-string' || env.SESSION_SECRET.trim() === '')) {
-    return new Response('Configuration Error: SESSION_SECRET is not configured. Please set it using `wrangler secret put SESSION_SECRET`.', { status: 500 });
+  if (
+    isAnyProviderConfigured &&
+    (!env.SESSION_SECRET || env.SESSION_SECRET === 'replace-with-secure-random-string' || env.SESSION_SECRET.trim() === '')
+  ) {
+    return new Response(
+      'Configuration Error: SESSION_SECRET is not configured. Please set it using `wrangler secret put SESSION_SECRET`.',
+      { status: 500 },
+    );
   }
 
   if (pathParts[0] !== 'auth' || pathParts.length < 2) return new Response('Not Found', { status: 404 });
 
   if (pathParts[1] === 'logout') {
     return new Response(null, {
-        status: 302,
-        headers: {
-            Location: '/',
-            'Set-Cookie': 'session=; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=0',
-        },
+      status: 302,
+      headers: {
+        Location: '/',
+        'Set-Cookie': 'session=; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=0',
+      },
     });
   }
 
@@ -243,7 +247,7 @@ export async function handleAuth(request: Request, env: Env): Promise<Response> 
     // Phase 1: Redirect to provider
     const state = crypto.randomUUID();
     const authUrl = provider.getAuthUrl(env, state, origin);
-    
+
     return new Response(null, {
       status: 302,
       headers: {
@@ -268,7 +272,7 @@ export async function handleAuth(request: Request, env: Env): Promise<Response> 
 
     try {
       const user = await provider.getUser(env, code, origin);
-      
+
       // Create session
       const sessionData = JSON.stringify(user);
       const signature = await sign(sessionData, env.SESSION_SECRET);
@@ -283,7 +287,6 @@ export async function handleAuth(request: Request, env: Env): Promise<Response> 
         status: 302,
         headers,
       });
-
     } catch (e: any) {
       return new Response(`Auth Failed: ${e.message}`, { status: 500 });
     }
@@ -294,7 +297,7 @@ export async function handleAuth(request: Request, env: Env): Promise<Response> 
 function parseCookies(header: string | null): Record<string, string> {
   const list: Record<string, string> = {};
   if (!header) return list;
-  header.split(';').forEach(cookie => {
+  header.split(';').forEach((cookie) => {
     let [name, ...rest] = cookie.split('=');
     name = name?.trim();
     if (!name) return;
@@ -306,43 +309,40 @@ function parseCookies(header: string | null): Record<string, string> {
 
 // Crypto Helpers
 async function sign(data: string, secret: string): Promise<string> {
-    const enc = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-        'raw', 
-        enc.encode(secret), 
-        { name: 'HMAC', hash: 'SHA-256' }, 
-        false, 
-        ['sign']
-    );
-    const signature = await crypto.subtle.sign('HMAC', key, enc.encode(data));
-    return String.fromCharCode(...new Uint8Array(signature));
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const signature = await crypto.subtle.sign('HMAC', key, enc.encode(data));
+  return String.fromCharCode(...new Uint8Array(signature));
 }
 
 export async function verifySession(request: Request, env: Env): Promise<UserProfile | null> {
-    const isAnyProviderConfigured = !!(env.GOOGLE_CLIENT_ID || env.TWITCH_CLIENT_ID || env.LINKEDIN_CLIENT_ID);
-    
-    if (isAnyProviderConfigured && (!env.SESSION_SECRET || env.SESSION_SECRET === 'replace-with-secure-random-string' || env.SESSION_SECRET.trim() === '')) {
-        console.error('Configuration Error: SESSION_SECRET is not configured.');
-        return null;
-    }
+  const isAnyProviderConfigured = !!(env.GOOGLE_CLIENT_ID || env.TWITCH_CLIENT_ID || env.LINKEDIN_CLIENT_ID);
 
-    const cookieHeader = request.headers.get('Cookie');
-    const cookies = parseCookies(cookieHeader);
-    const sessionCookie = cookies['session'];
-    if (!sessionCookie) return null;
+  if (
+    isAnyProviderConfigured &&
+    (!env.SESSION_SECRET || env.SESSION_SECRET === 'replace-with-secure-random-string' || env.SESSION_SECRET.trim() === '')
+  ) {
+    console.error('Configuration Error: SESSION_SECRET is not configured.');
+    return null;
+  }
 
-    const [dataB64, signatureB64] = sessionCookie.split('.');
-    if (!dataB64 || !signatureB64) return null;
+  const cookieHeader = request.headers.get('Cookie');
+  const cookies = parseCookies(cookieHeader);
+  const sessionCookie = cookies['session'];
+  if (!sessionCookie) return null;
 
-    const data = atob(dataB64);
-    const signature = atob(signatureB64);
+  const [dataB64, signatureB64] = sessionCookie.split('.');
+  if (!dataB64 || !signatureB64) return null;
 
-    const expectedSignature = await sign(data, env.SESSION_SECRET);
-    if (signature !== expectedSignature) return null;
+  const data = atob(dataB64);
+  const signature = atob(signatureB64);
 
-    try {
-        return JSON.parse(data) as UserProfile;
-    } catch {
-        return null;
-    }
+  const expectedSignature = await sign(data, env.SESSION_SECRET);
+  if (signature !== expectedSignature) return null;
+
+  try {
+    return JSON.parse(data) as UserProfile;
+  } catch {
+    return null;
+  }
 }
