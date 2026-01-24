@@ -497,3 +497,48 @@ form {
   max-width: 302px;
   margin-bottom: 0.4em;
 }
+
+.auth-section {
+  width: 100%;
+}
+
+.login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  width: 100%;
+}
+
+.login-btn {
+  display: block;
+  width: 100%;
+  padding: 0.8em;
+  text-align: center;
+  text-decoration: none;
+  font-weight: bold;
+  color: white;
+  border-radius: 0.4rem;
+  font-size: 1em;
+}
+
+.login-btn.google {
+  background-color: #db4437;
+}
+.login-btn.twitch {
+  background-color: #9146ff;
+}
+.login-btn.linkedin {
+  background-color: #0077b5;
+}
+
+.logout-link {
+  display: inline-block;
+  margin-top: 0.5em;
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.9em;
+}
+
+.logout-link:hover {
+  text-decoration: underline;
+}

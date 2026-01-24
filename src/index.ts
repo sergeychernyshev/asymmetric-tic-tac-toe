@@ -1,5 +1,7 @@
-import pageTemplate from './game.html';
 import { CHAT_TURN_TIME_MAX, CHAT_TURN_TIME_MIN, GameMode, Mark, Player, State, TicTacToeDO } from './do';
+import { handleAuth, verifySession } from './auth';
+import { renderGame } from './templates/game';
+import { renderIndex } from './templates/landing';
 
 export { TicTacToeDO } from './do';
 
@@ -15,6 +17,22 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const pathParts = url.pathname.split('/').filter((p) => p);
+
+    // Auth Routes
+    if (pathParts.length > 0 && pathParts[0] === 'auth') {
+      return handleAuth(request, env);
+    }
+
+    // API Routes
+    if (pathParts.length > 1 && pathParts[0] === 'api' && pathParts[1] === 'me') {
+      const user = await verifySession(request, env);
+      if (user) {
+        return new Response(JSON.stringify(user), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('Unauthorized', { status: 401 });
+    }
 
     let gameID: string | null = null;
     let token: string | null = null;
@@ -38,6 +56,17 @@ export default {
           token = pathParts[1];
         }
       }
+    } else if (pathParts.length === 0 || pathParts[0] === 'index.html') {
+      const providers = [];
+      if (env.GOOGLE_CLIENT_ID) providers.push({ name: 'Google', url: '/auth/google', class: 'google' });
+      if (env.TWITCH_CLIENT_ID) providers.push({ name: 'Twitch', url: '/auth/twitch', class: 'twitch' });
+      if (env.LINKEDIN_CLIENT_ID) providers.push({ name: 'LinkedIn', url: '/auth/linkedin', class: 'linkedin' });
+
+      const html = renderIndex(providers);
+
+      return new Response(html, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      });
     }
 
     if (gameID !== null) {
@@ -66,87 +95,55 @@ export default {
       // reading state to populate HTML on the server-side
       const state: State = await stub.getState();
 
-      let page = new TextDecoder().decode(pageTemplate);
-
-      // embed the state in the HTML for initial render
-      page = page.replace(/{{state}}/g, JSON.stringify(state));
-
-      // game ID
-      page = page.replace(/{{gameId}}/g, gameID);
-
-      // favicon
+      // favicon logic
       let favicon = '/x-favicon.png';
       if (state.settings.streamerMark === Mark.X) {
         if (state.turn === Player.STREAMER) {
           favicon = '/x-favicon.png';
-        } else {
+        }
+        else {
           favicon = '/o-favicon.png';
         }
       } else {
         if (state.turn === Player.CHAT) {
           favicon = '/x-favicon.png';
-        } else {
+        }
+        else {
           favicon = '/o-favicon.png';
         }
       }
-      page = page.replace(/{{favicon}}/g, favicon);
 
-      // current player and their mark
+      // turn classes logic
+      let streamerTurnClass = '';
+      let chatTurnClass = '';
       if (state.turn === Player.STREAMER) {
-        page = page.replace(/{{streamerTurn}}/g, state.settings.streamerMark === Mark.X ? 'x turn' : 'o turn');
-        page = page.replace(/{{chatTurn}}/g, state.settings.streamerMark === Mark.X ? 'o' : 'x');
+        streamerTurnClass = state.settings.streamerMark === Mark.X ? 'x turn' : 'o turn';
+        chatTurnClass = state.settings.streamerMark === Mark.X ? 'o' : 'x';
       } else {
-        page = page.replace(/{{streamerTurn}}/g, state.settings.streamerMark === Mark.X ? 'x' : 'o');
-        page = page.replace(/{{chatTurn}}/g, state.settings.streamerMark === Mark.X ? 'o turn' : 'x turn');
+        streamerTurnClass = state.settings.streamerMark === Mark.X ? 'x' : 'o';
+        chatTurnClass = state.settings.streamerMark === Mark.X ? 'o turn' : 'x turn';
       }
 
-      // board state
-      page = page.replace(/{{cell00}}/g, state.board[0][0] === Mark.X ? 'x disabled' : state.board[0][0] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell10}}/g, state.board[0][1] === Mark.X ? 'x disabled' : state.board[0][1] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell20}}/g, state.board[0][2] === Mark.X ? 'x disabled' : state.board[0][2] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell01}}/g, state.board[1][0] === Mark.X ? 'x disabled' : state.board[1][0] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell11}}/g, state.board[1][1] === Mark.X ? 'x disabled' : state.board[1][1] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell21}}/g, state.board[1][2] === Mark.X ? 'x disabled' : state.board[1][2] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell02}}/g, state.board[2][0] === Mark.X ? 'x disabled' : state.board[2][0] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell12}}/g, state.board[2][1] === Mark.X ? 'x disabled' : state.board[2][1] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell22}}/g, state.board[2][2] === Mark.X ? 'x disabled' : state.board[2][2] === Mark.O ? 'o disabled' : '');
-
-      // settings
-      page = page.replace(/{{firstMoveStreamer}}/g, `${state.settings.first === Player.STREAMER ? 'checked' : ''}`);
-      page = page.replace(/{{firstMoveChat}}/g, `${state.settings.first === Player.CHAT ? 'checked' : ''}`);
-
-      page = page.replace(/{{streamerMarkX}}/g, `${state.settings.streamerMark === Mark.X ? 'checked' : ''}`);
-      page = page.replace(/{{streamerMarkO}}/g, `${state.settings.streamerMark === Mark.O ? 'checked' : ''}`);
-
-      page = page.replace(/{{modeRegular}}/g, `${state.settings.mode === GameMode.REGULAR ? 'checked' : ''}`);
-      page = page.replace(/{{modeVote}}/g, `${state.settings.mode === GameMode.VOTE ? 'checked' : ''}`);
-
-      page = page.replace(/{{chatTurnTime}}/g, `${state.settings.chatTurnTime}`);
-      page = page.replace(/{{chatTurnTimeMin}}/g, `${CHAT_TURN_TIME_MIN}`);
-      page = page.replace(/{{chatTurnTimeMax}}/g, `${CHAT_TURN_TIME_MAX}`);
-      page = page.replace(/{{gamesPerRound}}/g, `${state.settings.gamesPerRound}`);
-
-      // links
+      // links logic
       const chatLink = `${url.origin}/${gameID}`;
-      page = page.replace(/{{chatLink}}/g, chatLink);
-
       const embedLink = `${url.origin}/${gameID}/embed`;
-      page = page.replace(/{{embedLink}}/g, embedLink);
-
       const streamerLink = token ? `${url.origin}/${gameID}/${token}` : chatLink;
-      page = page.replace(/{{streamerLink}}/g, streamerLink);
-
       const streamerDisplayLink = token ? `${url.origin}/${gameID}/*****` : chatLink;
-      page = page.replace(/{{streamerDisplayLink}}/g, streamerDisplayLink);
 
-      // Remove settings and links panels if not authorized
-      if (!token) {
-        page = page.replace(/<section class="share">[\s\S]*?<\/section>/g, '');
-        page = page.replace(/<section class="settings">[\s\S]*?<\/section>/g, '');
-        page = page.replace(/<section class="links-panel">[\s\S]*?<\/section>/g, '');
-      }
+      const html = renderGame(
+        state,
+        gameID,
+        favicon,
+        streamerTurnClass,
+        chatTurnClass,
+        chatLink,
+        embedLink,
+        streamerLink,
+        streamerDisplayLink,
+        token
+      );
 
-      return new Response(page, { headers });
+      return new Response(html, { headers });
     }
 
     /**

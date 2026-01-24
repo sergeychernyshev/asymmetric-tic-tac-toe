@@ -21,13 +21,6 @@
       "new_sqlite_classes": ["TicTacToeDO"]
     }
   ],
-  "rules": [
-    {
-      "type": "Data",
-      "globs": ["**/*.html"],
-      "fallthrough": false
-    }
-  ],
   "assets": {
     "directory": "./src/public",
     "binding": "ASSETS"
@@ -42,6 +35,16 @@
   },
   "observability": {
     "enabled": true
+  },
+  "vars": {
+    "GOOGLE_CLIENT_ID": "",
+    "GOOGLE_CLIENT_SECRET": "",
+    "TWITCH_CLIENT_ID": "",
+    "TWITCH_CLIENT_SECRET": "",
+    "LINKEDIN_CLIENT_ID": "",
+    "LINKEDIN_CLIENT_SECRET": "",
+    "SESSION_SECRET": "",
+    "AUTH_ORIGIN": ""
   }
   //   "env": {
   //     "stage": {

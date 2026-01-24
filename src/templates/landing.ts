@@ -1,4 +1,5 @@
-<!doctype html>
+export function renderIndex(providers: { name: string; url: string; class: string }[]): string {
+  return `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -15,9 +16,11 @@
   <body>
     <section class="start-game">
       <h1>Tic-Tac-Toe</h1>
-      <button class="start-button">Start New Game</button>
 
-      <div class="divider">OR</div>
+      <div id="user-info" style="display: none; margin-bottom: 20px; text-align: center">
+        <p>Welcome, <span id="user-name" style="font-weight: bold"></span>!</p>
+        <a href="/auth/logout" class="logout-link">Logout</a>
+      </div>
 
       <form class="join-game">
         <label for="game-id">Join Existing Game</label>
@@ -26,6 +29,23 @@
           <button type="submit">Join</button>
         </div>
       </form>
+
+      <button class="start-button">Start New Game</button>
+
+      ${
+        providers && providers.length > 0
+          ? `
+
+      <div class="divider">Or Login With</div>
+
+      <div class="auth-section">
+        <div class="login-buttons">
+          ${providers.map((provider) => `<a href="${provider.url}" class="login-btn ${provider.class}">${provider.name}</a>`).join('\n')}
+        </div>
+      </div>
+      `
+          : ''
+      }
     </section>
 
     <script>
@@ -47,16 +67,33 @@
       }
 
       document.querySelector('.start-button').addEventListener('click', () => {
-        document.location.href = `/${generateGameId()}/${self.crypto.randomUUID()}`;
+        document.location.href = \`/\${generateGameId()}/\${self.crypto.randomUUID()}\`;
       });
 
       document.querySelector('.join-game').addEventListener('submit', (e) => {
         e.preventDefault();
         const gameId = document.getElementById('game-id').value.toUpperCase();
         if (gameId) {
-          document.location.href = `/${gameId}`;
+          document.location.href = \`/\${gameId}\`;
         }
       });
+
+      // Check auth status
+      fetch('/api/me')
+        .then((res) => {
+          if (res.ok) return res.json();
+          throw new Error('Not logged in');
+        })
+        .then((user) => {
+          document.getElementById('user-info').style.display = 'block';
+          document.getElementById('user-name').textContent = user.name;
+          document.querySelector('.auth-section').style.display = 'none';
+          document.querySelector('.divider').style.display = 'none';
+        })
+        .catch((err) => {
+          // Not logged in, default state is fine
+        });
     </script>
   </body>
-</html>
+</html>`;
+}
