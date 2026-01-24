@@ -167,6 +167,12 @@ export class TicTacToeDO extends DurableObject<Env> {
     return this.state.owner === userId;
   }
 
+  async transferOwnership(userId: string): Promise<void> {
+    this.state.owner = userId;
+    await this.storage.delete('tokenHash');
+    await this.saveState();
+  }
+
   /**
    * Web Socket server for updates and stuff
    *

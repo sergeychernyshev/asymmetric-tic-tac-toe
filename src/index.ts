@@ -96,12 +96,19 @@ export default {
     }
 
     const user = await verifySession(request, env);
+    const origin = (env as any).AUTH_ORIGIN || url.origin;
+
+    // If accessing control page with a token AND logged in, transfer ownership and redirect
+    if (isControl && token && user) {
+      await stub.transferOwnership(user.id);
+      return Response.redirect(`${origin}/${gameID}/control`, 302);
+    }
 
     // If accessing control page without a token, must be logged in and own the game
     if (isControl && !token) {
       if (!user) {
         // Redirect to login or show error? For now, redirect to home.
-        return Response.redirect(`${url.origin}/`, 302);
+        return Response.redirect(`${origin}/`, 302);
       }
       // Try to claim the game if it is new
       await stub.claim(user.id);
@@ -150,7 +157,6 @@ export default {
       }
 
       // links logic
-      const origin = (env as any).AUTH_ORIGIN || url.origin;
       const chatLink = `${origin}/${gameID}`;
       const embedLink = `${origin}/${gameID}/embed`;
       const streamerLink = token ? `${origin}/${gameID}/control/${token}` : `${origin}/${gameID}/control`;
