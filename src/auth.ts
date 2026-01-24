@@ -2,9 +2,10 @@ import { z } from 'zod';
 
 export interface UserProfile {
   id: string;
-  email: string;
+  email?: string;
   name: string;
   provider: string;
+  picture?: string;
 }
 
 interface AuthProvider {
@@ -25,6 +26,7 @@ const TwitchUserSchema = z.object({
   login: z.string(),
   display_name: z.string(),
   email: z.string().optional(),
+  profile_image_url: z.string().optional(),
 });
 
 const LinkedInUserSchema = z.object({
@@ -90,6 +92,7 @@ export const GoogleProvider: AuthProvider = {
       email: userData.email,
       name: userData.name,
       provider: 'google',
+      picture: userData.picture,
     };
   },
 };
@@ -144,6 +147,7 @@ export const TwitchProvider: AuthProvider = {
       email: userData.email || '', // Email might be optional depending on scope/verification
       name: userData.display_name,
       provider: 'twitch',
+      picture: userData.profile_image_url,
     };
   },
 };
@@ -192,6 +196,7 @@ export const LinkedInProvider: AuthProvider = {
       email: userData.email,
       name: userData.name,
       provider: 'linkedin',
+      picture: userData.picture,
     };
   },
 };

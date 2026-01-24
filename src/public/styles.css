@@ -41,7 +41,7 @@ body {
   background-color: white;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
+  max-width: 30rem;
   margin: 50px auto;
 }
 
@@ -533,7 +533,6 @@ form {
 
 .logout-link {
   display: inline-block;
-  margin-top: 0.5em;
   color: #007bff;
   text-decoration: none;
   font-size: 0.9em;
@@ -541,4 +540,14 @@ form {
 
 .logout-link:hover {
   text-decoration: underline;
+}
+
+#user-name {
+  font-weight: bold;
+}
+
+#user-info img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
 }

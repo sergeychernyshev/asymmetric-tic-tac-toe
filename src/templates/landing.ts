@@ -22,8 +22,10 @@ export function renderIndex(providers: { name: string; url: string; class: strin
       ${
         user
           ? `
-      <div id="user-info" style="margin-bottom: 20px; text-align: center">
-        Welcome, <span id="user-name" style="font-weight: bold">${user.name}</span>! <a href="/auth/logout" class="logout-link">Logout</a>
+      <div id="user-info" style="margin-bottom: 20px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px;">
+        ${user.picture ? `<img src="${user.picture}" alt="${user.name}" width="32" height="32" />` : ''}
+        <span>Welcome, <span id="user-name">${user.name}</span>!</span>
+        <a href="/auth/logout" class="logout-link">Logout</a>
       </div>
       `
           : ''
