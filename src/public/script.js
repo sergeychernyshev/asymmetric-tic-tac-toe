@@ -126,7 +126,17 @@ function join() {
 
   const pathParts = window.location.pathname.split('/').filter((p) => p);
   const gameID = pathParts[0];
-  const token = pathParts.length > 1 && pathParts[1] !== 'embed' ? pathParts[1] : null;
+  let token = null;
+
+  if (pathParts.length > 1) {
+    if (pathParts[1] === 'control') {
+      if (pathParts.length > 2) {
+        token = pathParts[2];
+      }
+    } else if (pathParts[1] !== 'embed') {
+      token = pathParts[1];
+    }
+  }
 
   let wsUrl = `${wss}${window.location.hostname}:${window.location.port}/websocket?game=${gameID}`;
 
