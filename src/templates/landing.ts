@@ -23,9 +23,18 @@ export function renderIndex(providers: { name: string; url: string; class: strin
         user
           ? `
       <div id="user-info" style="margin-bottom: 20px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px;">
-        ${user.picture ? `<img src="${user.picture}" alt="${user.name}" width="32" height="32" />` : ''}
-        <span>Welcome, <span id="user-name">${user.name}</span>!</span>
-        <a href="/auth/logout" class="logout-link">Logout</a>
+        ${
+          user.picture
+            ? `
+        <div class="user-avatar-container">
+          <img src="${user.picture}" alt="${user.name}" class="avatar" />
+          <img src="https://www.google.com/s2/favicons?domain=${user.provider === 'twitch' ? 'twitch.tv' : user.provider === 'linkedin' ? 'linkedin.com' : 'google.com'}&sz=32" 
+               alt="${user.provider}" class="provider-icon" />
+        </div>`
+            : ''
+        }
+        <p style="margin: 0;">Welcome, <span id="user-name" style="font-weight: bold">${user.name}</span>!</p>
+        <a href="/auth/logout" class="logout-link" style="margin-left: 10px;">Logout</a>
       </div>
       `
           : ''
@@ -75,7 +84,12 @@ export function renderIndex(providers: { name: string; url: string; class: strin
       }
 
       document.querySelector('.start-button').addEventListener('click', () => {
-        document.location.href = \`/\${generateGameId()}/\${self.crypto.randomUUID()}\`;
+        const gameID = generateGameId();
+        ${
+          user
+            ? `document.location.href = \`/\${gameID}/control\`;`
+            : `document.location.href = \`/\${gameID}/control/\${self.crypto.randomUUID()}\`;`
+        }
       });
 
       document.querySelector('.join-game').addEventListener('submit', (e) => {

@@ -38,6 +38,7 @@ export default {
     let token: string | null = null;
     let isWebsocket = false;
     let isEmbed = false;
+    let isControl = false;
 
     // 1. Check for WebSocket request via query params (standard /websocket route)
     if (pathParts.length > 0 && pathParts[0] === 'websocket') {
@@ -52,7 +53,13 @@ export default {
       if (pathParts.length > 1) {
         if (pathParts[1] === 'embed') {
           isEmbed = true;
+        } else if (pathParts[1] === 'control') {
+          isControl = true;
+          if (pathParts.length > 2) {
+            token = pathParts[2];
+          }
         } else {
+          // Legacy or direct token access: /ABC-123/TOKEN
           token = pathParts[1];
         }
       }
@@ -83,9 +90,26 @@ export default {
     // The Durable Object constructor will be invoked upon the first call for a given id
     let stub: DurableObjectStub<TicTacToeDO> = env.TIC_TAC_TOE_DO.get(id);
 
-    // if token is provided, check if it is valid
-    if (token !== null && !(await stub.checkToken(token))) {
+    // if token is provided, check if it is valid (but not for websocket, as DO handles handshake)
+    if (token !== null && !isWebsocket && !(await stub.checkToken(token))) {
       return new Response('Invalid token', { status: 403 });
+    }
+
+    const user = await verifySession(request, env);
+
+    // If accessing control page without a token, must be logged in and own the game
+    if (isControl && !token) {
+      if (!user) {
+        // Redirect to login or show error? For now, redirect to home.
+        return Response.redirect(`${url.origin}/`, 302);
+      }
+      // Try to claim the game if it is new
+      await stub.claim(user.id);
+      
+      const state = await stub.getState();
+      if (state.owner !== user.id) {
+        return new Response('You do not own this game', { status: 403 });
+      }
     }
 
     if (gameID && !isWebsocket) {
@@ -95,6 +119,8 @@ export default {
 
       // reading state to populate HTML on the server-side
       const state: State = await stub.getState();
+
+      const isAuthorized = isControl || !!token;
 
       // favicon logic
       let favicon = '/x-favicon.png';
@@ -124,10 +150,11 @@ export default {
       }
 
       // links logic
-      const chatLink = `${url.origin}/${gameID}`;
-      const embedLink = `${url.origin}/${gameID}/embed`;
-      const streamerLink = token ? `${url.origin}/${gameID}/${token}` : chatLink;
-      const streamerDisplayLink = token ? `${url.origin}/${gameID}/*****` : chatLink;
+      const origin = (env as any).AUTH_ORIGIN || url.origin;
+      const chatLink = `${origin}/${gameID}`;
+      const embedLink = `${origin}/${gameID}/embed`;
+      const streamerLink = token ? `${origin}/${gameID}/control/${token}` : `${origin}/${gameID}/control`;
+      const streamerDisplayLink = token ? `${origin}/${gameID}/control/*****` : `${origin}/${gameID}/control`;
 
       const html = renderGame(
         state,
@@ -139,7 +166,10 @@ export default {
         embedLink,
         streamerLink,
         streamerDisplayLink,
-        token,
+        isAuthorized,
+        user,
+        isEmbed,
+        isControl,
       );
 
       return new Response(html, { headers });

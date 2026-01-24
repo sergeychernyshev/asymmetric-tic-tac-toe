@@ -546,8 +546,26 @@ form {
   font-weight: bold;
 }
 
-#user-info img {
+.user-avatar-container {
+  position: relative;
   width: 32px;
   height: 32px;
+}
+
+.user-avatar-container img.avatar {
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-avatar-container img.provider-icon {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  padding: 1px;
 }

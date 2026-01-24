@@ -1,4 +1,5 @@
 import { State, Mark, CHAT_TURN_TIME_MIN, CHAT_TURN_TIME_MAX } from '../do';
+import { UserProfile } from '../auth';
 
 export function renderGame(
   state: State,
@@ -10,7 +11,10 @@ export function renderGame(
   embedLink: string,
   streamerLink: string,
   streamerDisplayLink: string,
-  token: string | null,
+  isAuthorized: boolean,
+  user: UserProfile | null,
+  isEmbed: boolean,
+  isControl: boolean,
 ): string {
   const getCellClass = (row: number, col: number) => {
     const val = state.board[row][col];
@@ -33,13 +37,38 @@ export function renderGame(
     <link rel="apple-touch-icon" href="/x-favicon.png" />
 
     <script>
-      let state = ${JSON.stringify(state)};
+      let state = ${JSON.stringify({ ...state, authorized: isAuthorized })};
     </script>
     <script src="/script.js" defer></script>
   </head>
   <body>
     <main>
       <section>
+        ${
+          user && !isEmbed
+            ? `
+        <div id="user-info" style="margin-bottom: 10px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px;">
+          ${
+            user.picture
+              ? `
+          <div class="user-avatar-container">
+            <img src="${user.picture}" alt="${user.name}" class="avatar" />
+            <img src="https://www.google.com/s2/favicons?domain=${user.provider === 'twitch' ? 'twitch.tv' : user.provider === 'linkedin' ? 'linkedin.com' : 'google.com'}&sz=32" 
+                 alt="${user.provider}" class="provider-icon" />
+          </div>`
+              : ''
+          }
+          <span style="font-size: 0.9em;"><span style="font-weight: bold">${user.name}</span></span>
+          <a href="/auth/logout" class="logout-link" style="margin-left: 5px; font-size: 0.8em;">Logout</a>
+          ${
+            !isControl && state.owner === user.id
+              ? `<a href="/${gameID}/control" title="Go to Control Panel" style="text-decoration: none; font-size: 1.2em;">⚙️</a>`
+              : ''
+          }
+        </div>
+        `
+            : ''
+        }
         <div class="game-board">
           <!-- <h1>Tic-Tac-Toe</h1> -->
           <div class="turn-status">
@@ -73,7 +102,7 @@ export function renderGame(
 
       <div>
         ${
-          token
+          isAuthorized
             ? `
         <section class="share">
           Share/Invite:
@@ -146,7 +175,7 @@ export function renderGame(
       </div>
     </main>
     ${
-      token
+      isAuthorized
         ? `
     <section class="links-panel">
       <div>
