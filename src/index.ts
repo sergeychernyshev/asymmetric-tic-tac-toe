@@ -1,5 +1,5 @@
-import { CHAT_TURN_TIME_MAX, CHAT_TURN_TIME_MIN, GameMode, Mark, Player, State, TicTacToeDO } from './do';
-import { handleAuth, verifySession } from './auth';
+import { Mark, Player, State, TicTacToeDO } from './do';
+import { handleAuth, verifySession } from './auth/';
 import { renderGame } from './templates/game';
 import { renderIndex } from './templates/landing';
 
