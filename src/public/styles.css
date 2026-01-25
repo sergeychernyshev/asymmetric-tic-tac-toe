@@ -12,7 +12,7 @@ body {
 nav {
   background-color: #f8f9fa;
   border-bottom: 1px solid #e9ecef;
-  padding: 0.3rem 0.5rem;
+  padding: 0.2rem 0.4rem;
   margin-bottom: 0.5rem;
 }
 
@@ -27,7 +27,8 @@ nav {
 
 .nav-brand {
   font-weight: bold;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
+  margin: 0.1rem;
   text-decoration: none;
   color: #333;
 }
