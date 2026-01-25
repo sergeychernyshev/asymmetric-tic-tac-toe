@@ -13,6 +13,15 @@ export class UserDO extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.storage = ctx.storage;
+    this.ctx.blockConcurrencyWhile(async () => {
+      this.storage.sql.exec(`
+        CREATE TABLE IF NOT EXISTS games (
+          gameId TEXT PRIMARY KEY,
+          role TEXT,
+          timestamp INTEGER
+        );
+      `);
+    });
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -63,47 +72,31 @@ export class UserDO extends DurableObject<Env> {
   }
 
   async addGame(gameId: string, role: 'owner' | 'player'): Promise<void> {
-    const games = (await this.getGames()) || [];
-
-    // Remove existing record if present to update timestamp/role and move to top
-    const index = games.findIndex((g) => g.gameId === gameId);
-    if (index !== -1) {
-      games.splice(index, 1);
-    }
-
-    // Add new record to the beginning
-    games.unshift({
+    this.storage.sql.exec(
+      'INSERT OR REPLACE INTO games (gameId, role, timestamp) VALUES (?, ?, ?)',
       gameId,
       role,
-      timestamp: Date.now(),
-    });
+      Date.now(),
+    );
 
     // Keep only the last 50 games
-    if (games.length > 50) {
-      games.length = 50;
-    }
-
-    await this.storage.put('games', games);
+    this.storage.sql.exec(`
+      DELETE FROM games WHERE gameId NOT IN (
+        SELECT gameId FROM games
+        ORDER BY CASE WHEN role = 'owner' THEN 0 ELSE 1 END, timestamp DESC
+        LIMIT 50
+      )
+    `);
   }
 
   async deleteGame(gameId: string): Promise<void> {
-    const games = (await this.getGames()) || [];
-    const index = games.findIndex((g) => g.gameId === gameId);
-    if (index !== -1) {
-      games.splice(index, 1);
-      await this.storage.put('games', games);
-    }
+    this.storage.sql.exec('DELETE FROM games WHERE gameId = ?', gameId);
   }
 
   async getGames(): Promise<GameRecord[]> {
-    const games = (await this.storage.get<GameRecord[]>('games')) || [];
-    return games.sort((a, b) => {
-      // Sort by role: 'owner' comes first
-      if (a.role === 'owner' && b.role !== 'owner') return -1;
-      if (a.role !== 'owner' && b.role === 'owner') return 1;
-
-      // Then sort by timestamp descending (newest first)
-      return b.timestamp - a.timestamp;
-    });
+    const result = this.storage.sql.exec(
+      "SELECT gameId, role, timestamp FROM games ORDER BY CASE WHEN role = 'owner' THEN 0 ELSE 1 END, timestamp DESC LIMIT 50",
+    );
+    return result.toArray() as unknown as GameRecord[];
   }
 }
