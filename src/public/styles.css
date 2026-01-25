@@ -5,6 +5,48 @@
 
 body {
   font-family: Verdana, Geneva, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+nav {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0.2rem 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.nav-content {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.nav-brand {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin: 0.1rem;
+  text-decoration: none;
+  color: #333;
+  display: flex;
+  align-items: center;
+}
+
+.nav-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-right: 0.4rem;
+  border: 1px solid #333;
+  border-radius: 3px;
+  padding: 1px;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
 }
 
 .start-button,
@@ -41,7 +83,7 @@ body {
   background-color: white;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  max-width: 400px;
+  max-width: 30rem;
   margin: 50px auto;
 }
 
@@ -170,6 +212,30 @@ h1 {
   display: none;
 }
 
+.game-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.user-info-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.control-gear-icon {
+  text-decoration: none;
+  font-size: 1rem;
+  margin-left: 2px;
+}
+
+.game-control-gear-large {
+  text-decoration: none;
+  font-size: 1.5rem;
+}
+
 .game-board {
   display: flex;
   flex-direction: column;
@@ -191,8 +257,8 @@ h1 {
 .grid-cell {
   background-color: white;
   border: 1px solid black;
-  height: 100px;
-  width: 100px;
+  height: 5rem;
+  width: 5rem;
   text-align: center;
   cursor: pointer;
 }
@@ -227,15 +293,15 @@ h1 {
 
 .x::before {
   content: url('/x.svg');
-  width: 75px;
-  height: 75px;
+  width: 3rem;
+  height: 3rem;
   stroke: black;
 }
 
 .o::before {
   content: url('/o.svg');
-  width: 75px;
-  height: 75px;
+  width: 3rem;
+  height: 3rem;
   stroke: black;
 }
 
@@ -326,8 +392,8 @@ form {
 }
 
 .sync {
-  padding: 1em;
-  max-width: 360px;
+  padding: 1rem 0.2rem;
+  font-size: 0.9rem;
   text-align: center;
 }
 
@@ -337,7 +403,7 @@ form {
   border: 1px solid black;
   border-radius: 0.3em;
   background-color: white;
-  max-width: 302px;
+  max-width: 20rem;
 }
 
 .settings h2 {
@@ -494,6 +560,153 @@ form {
   border: 1px solid black;
   border-radius: 0.3em;
   background-color: white;
-  max-width: 302px;
+  max-width: 20rem;
   margin-bottom: 0.4em;
+}
+
+.auth-section {
+  width: 100%;
+}
+
+.login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  width: 100%;
+}
+
+.login-btn {
+  display: block;
+  width: 100%;
+  padding: 0.8em;
+  text-align: center;
+  text-decoration: none;
+  font-weight: bold;
+  color: white;
+  border-radius: 0.4rem;
+  font-size: 1em;
+}
+
+.login-btn.google {
+  background-color: #db4437;
+}
+.login-btn.twitch {
+  background-color: #9146ff;
+}
+.login-btn.linkedin {
+  background-color: #0077b5;
+}
+
+.login-link {
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
+dialog {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 0;
+  max-width: 90vw;
+  width: 300px;
+}
+
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.login-dialog-content {
+  position: relative;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.login-dialog-content h3 {
+  margin: 0;
+  text-align: center;
+}
+
+.close-dialog-x {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+  padding: 0.2rem;
+}
+
+.close-dialog-x:hover {
+  color: #333;
+}
+
+.login-btn.linkedin {
+  background-color: #0077b5;
+}
+
+.logout-link {
+  display: inline-block;
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.75rem;
+  margin-left: 2px;
+}
+
+.logout-link:hover {
+  text-decoration: underline;
+}
+
+.user-avatar-container {
+  position: relative;
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.user-avatar-container img.avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-avatar-container img.provider-icon {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: white;
+  padding: 1px;
+}
+
+#user-name {
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+
+@media (max-width: 25rem) {
+  #user-name {
+    display: none;
+  }
+  .logout-link span {
+    display: none;
+  }
+  .logout-link::after {
+    content: '➜]';
+  }
+  .nav-right {
+    gap: 0.5rem;
+  }
 }

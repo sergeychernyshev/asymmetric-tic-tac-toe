@@ -1,5 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import { z } from 'zod';
+import { verifySession } from './auth/index';
 
 // configuration settings
 export enum Player {
@@ -56,6 +57,7 @@ const StateSchema = z.object({
   gameOver: z.boolean(), // Is the game over?
   winnerCoordinates: z.array(CoordinatesSchema), // array of coordinate pairs
   settings: SettingsSchema, // game settings
+  owner: z.string().optional(), // identity of the game owner
   votes: z.array(CoordinatesSchema).optional(),
   voteEndTime: z.number().optional(),
   voters: z.record(z.string(), CoordinatesSchema).optional(), // map of sessionId -> [col, row]
@@ -139,6 +141,7 @@ export class TicTacToeDO extends DurableObject<Env> {
       gameOver: false, // Is the game over?
       winnerCoordinates: [], // array of coordinate pairs that make up the winning line
       settings: this.settings,
+      owner: this.state?.owner, // preserve owner if it exists
       votes: [],
       voteEndTime: undefined,
       voters: {},
@@ -151,6 +154,23 @@ export class TicTacToeDO extends DurableObject<Env> {
     }
 
     return emptyState;
+  }
+
+  async claim(userId: string): Promise<boolean> {
+    // If game has no owner and no token hash, allow claiming
+    const storedHash = await this.storage.get('tokenHash');
+    if (!this.state.owner && !storedHash) {
+      this.state.owner = userId;
+      await this.saveState();
+      return true;
+    }
+    return this.state.owner === userId;
+  }
+
+  async transferOwnership(userId: string): Promise<void> {
+    this.state.owner = userId;
+    await this.storage.delete('tokenHash');
+    await this.saveState();
   }
 
   /**
@@ -168,10 +188,16 @@ export class TicTacToeDO extends DurableObject<Env> {
     const token = url.searchParams.get('token');
     let sessionId = url.searchParams.get('sessionId');
 
-    if (token && (await this.checkToken(token))) {
-      // If the token is valid, we can record it as an attachment to the WebSocket.
-      // This will allow us to retrieve it later in the `webSocketMessage()` handler.
-      server.serializeAttachment({ token });
+    // Get user identity if present
+    const user = await verifySession(request, this.env);
+    const userId = user?.id;
+
+    // Check token validity
+    const authorizedByToken = !!token && (await this.checkToken(token));
+
+    if (userId || authorizedByToken) {
+      // Record identity/token status as an attachment to the WebSocket.
+      server.serializeAttachment({ userId, authorizedByToken });
     } else {
       // Assign a random session ID to unauthenticated users if not provided
       if (!sessionId) {
@@ -181,14 +207,6 @@ export class TicTacToeDO extends DurableObject<Env> {
     }
 
     // Calling `acceptWebSocket()` informs the runtime that this WebSocket is to begin terminating
-    // request within the Durable Object. It has the effect of "accepting" the connection,
-    // and allowing the WebSocket to send and receive messages.
-    // Unlike `ws.accept()`, `state.acceptWebSocket(ws)` informs the Workers Runtime that the WebSocket
-    // is "hibernatable", so the runtime does not need to pin this Durable Object to memory while
-    // the connection is open. During periods of inactivity, the Durable Object can be evicted
-    // from memory, but the WebSocket connection will remain open. If at some later point the
-    // WebSocket receives a message, the runtime will recreate the Durable Object
-    // (run the `constructor`) and deliver the message to the appropriate handler.
     this.ctx.acceptWebSocket(server);
 
     return new Response(null, {
@@ -204,10 +222,13 @@ export class TicTacToeDO extends DurableObject<Env> {
   }
 
   private sendState(ws: WebSocket) {
-    const attachment = ws.deserializeAttachment() as { token?: string; sessionId?: string } | null;
-    const token = attachment?.token;
+    const attachment = ws.deserializeAttachment() as { userId?: string; authorizedByToken?: boolean; sessionId?: string } | null;
+    const userId = attachment?.userId;
+    const authorizedByToken = !!attachment?.authorizedByToken;
+    const authorized = authorizedByToken || (!!userId && userId === this.state.owner);
+
     const sessionId = attachment?.sessionId;
-    const msg = { ...this.state, authorized: !!token, sessionId };
+    const msg = { ...this.state, authorized, sessionId };
 
     try {
       ws.send(JSON.stringify(msg));
@@ -259,6 +280,10 @@ export class TicTacToeDO extends DurableObject<Env> {
     } catch (err) {}
 
     if (!storedHash) {
+      // if game has an owner, don't allow claiming with token
+      if (this.state.owner) {
+        return false;
+      }
       // create a new hash and store it
       const newHash: ArrayBuffer = await this.hashToken(token);
       await this.storage.put('tokenHash', newHash);
@@ -424,8 +449,11 @@ export class TicTacToeDO extends DurableObject<Env> {
   }
 
   async webSocketMessage(ws: WebSocket, messageString: ArrayBuffer | string) {
-    const attachment = ws.deserializeAttachment() as { token?: string; sessionId?: string } | null;
-    const token = attachment?.token;
+    const attachment = ws.deserializeAttachment() as { userId?: string; authorizedByToken?: boolean; sessionId?: string } | null;
+    const userId = attachment?.userId;
+    const authorizedByToken = !!attachment?.authorizedByToken;
+    const authorized = authorizedByToken || (!!userId && userId === this.state.owner);
+
     const sessionId = attachment?.sessionId;
 
     if (typeof messageString === 'string') {
@@ -439,6 +467,10 @@ export class TicTacToeDO extends DurableObject<Env> {
 
       // restart the game
       if (message.restart) {
+        // only authorized users can restart
+        if (!authorized) {
+          return;
+        }
         this.state = this.getEmptyState();
 
         // If starting with CHAT turn in VOTE mode, start timer
@@ -456,7 +488,7 @@ export class TicTacToeDO extends DurableObject<Env> {
         const [y, x] = message.move;
 
         // If no token is present (unauthenticated), and it's the streamer's turn, deny the move.
-        if (!token && this.state.turn === Player.STREAMER) {
+        if (!authorized && this.state.turn === Player.STREAMER) {
           console.log('Unauthenticated user tried to make a STREAMER move. Denied.');
           this.sendState(ws); // Send current state to inform client of denial (or just return)
           return;
@@ -470,7 +502,7 @@ export class TicTacToeDO extends DurableObject<Env> {
 
         // If it is CHAT's turn and VOTE mode
         if (this.state.turn === Player.CHAT && this.settings.mode === GameMode.VOTE) {
-          if (token) {
+          if (authorized) {
             // Authenticated user (Streamer) force-move during voting
             // Check if move is valid first
             if (this.state.board[x][y] !== 0) {
@@ -487,8 +519,10 @@ export class TicTacToeDO extends DurableObject<Env> {
           } else {
             // Record vote
             if (!this.state.voters) this.state.voters = {};
-            if (sessionId) {
-              this.state.voters[sessionId] = [y, x];
+            const voterId = userId || sessionId;
+
+            if (voterId) {
+              this.state.voters[voterId] = [y, x];
 
               // Rebuild votes array from voters map
               this.state.votes = Object.values(this.state.voters);
@@ -513,7 +547,7 @@ export class TicTacToeDO extends DurableObject<Env> {
       }
 
       // save settings only if the user is authorized
-      if (token && message.settings) {
+      if (authorized && message.settings) {
         const settings = SettingsSchema.parse(message.settings);
         const oldMode = this.settings.mode;
 

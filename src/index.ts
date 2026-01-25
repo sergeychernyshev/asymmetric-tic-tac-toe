@@ -1,5 +1,7 @@
-import pageTemplate from './game.html';
-import { CHAT_TURN_TIME_MAX, CHAT_TURN_TIME_MIN, GameMode, Mark, Player, State, TicTacToeDO } from './do';
+import { Mark, Player, State, TicTacToeDO } from './do';
+import { handleAuth, verifySession } from './auth/';
+import { renderGame } from './templates/game';
+import { renderIndex } from './templates/landing';
 
 export { TicTacToeDO } from './do';
 
@@ -16,10 +18,33 @@ export default {
     const url = new URL(request.url);
     const pathParts = url.pathname.split('/').filter((p) => p);
 
+    // Auth Routes
+    if (pathParts.length > 0 && pathParts[0] === 'auth') {
+      return handleAuth(request, env);
+    }
+
+    const returnTo = encodeURIComponent(url.pathname + url.search);
+    const providers = [];
+    if (env.GOOGLE_CLIENT_ID) providers.push({ name: 'Google', url: `/auth/google?returnTo=${returnTo}`, class: 'google' });
+    if (env.TWITCH_CLIENT_ID) providers.push({ name: 'Twitch', url: `/auth/twitch?returnTo=${returnTo}`, class: 'twitch' });
+    if (env.LINKEDIN_CLIENT_ID) providers.push({ name: 'LinkedIn', url: `/auth/linkedin?returnTo=${returnTo}`, class: 'linkedin' });
+
+    // // API Routes
+    // if (pathParts.length > 1 && pathParts[0] === 'api' && pathParts[1] === 'me') {
+    //   const user = await verifySession(request, env);
+    //   if (user) {
+    //     return new Response(JSON.stringify(user), {
+    //       headers: { 'Content-Type': 'application/json' },
+    //     });
+    //   }
+    //   return new Response('Unauthorized', { status: 401 });
+    // }
+
     let gameID: string | null = null;
     let token: string | null = null;
     let isWebsocket = false;
     let isEmbed = false;
+    let isControl = false;
 
     // 1. Check for WebSocket request via query params (standard /websocket route)
     if (pathParts.length > 0 && pathParts[0] === 'websocket') {
@@ -34,10 +59,23 @@ export default {
       if (pathParts.length > 1) {
         if (pathParts[1] === 'embed') {
           isEmbed = true;
+        } else if (pathParts[1] === 'control') {
+          isControl = true;
+          if (pathParts.length > 2) {
+            token = pathParts[2];
+          }
         } else {
+          // Legacy or direct token access: /ABC-123/TOKEN
           token = pathParts[1];
         }
       }
+    } else if (pathParts.length === 0 || pathParts[0] === 'index.html') {
+      const user = await verifySession(request, env);
+      const html = renderIndex(providers, user);
+
+      return new Response(html, {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      });
     }
 
     if (gameID !== null) {
@@ -53,9 +91,33 @@ export default {
     // The Durable Object constructor will be invoked upon the first call for a given id
     let stub: DurableObjectStub<TicTacToeDO> = env.TIC_TAC_TOE_DO.get(id);
 
-    // if token is provided, check if it is valid
-    if (token !== null && !(await stub.checkToken(token))) {
+    // if token is provided, check if it is valid (but not for websocket, as DO handles handshake)
+    if (token !== null && !isWebsocket && !(await stub.checkToken(token))) {
       return new Response('Invalid token', { status: 403 });
+    }
+
+    const user = await verifySession(request, env);
+    const origin = (env as any).AUTH_ORIGIN || url.origin;
+
+    // If accessing control page with a token AND logged in, transfer ownership and redirect
+    if (isControl && token && user) {
+      await stub.transferOwnership(user.id);
+      return Response.redirect(`${origin}/${gameID}/control`, 302);
+    }
+
+    // If accessing control page without a token, must be logged in and own the game
+    if (isControl && !token) {
+      if (!user) {
+        // Redirect to login or show error? For now, redirect to home.
+        return Response.redirect(`${origin}/`, 302);
+      }
+      // Try to claim the game if it is new
+      await stub.claim(user.id);
+
+      const state = await stub.getState();
+      if (state.owner !== user.id) {
+        return new Response('You do not own this game', { status: 403 });
+      }
     }
 
     if (gameID && !isWebsocket) {
@@ -66,15 +128,9 @@ export default {
       // reading state to populate HTML on the server-side
       const state: State = await stub.getState();
 
-      let page = new TextDecoder().decode(pageTemplate);
+      const isAuthorized = isControl || !!token;
 
-      // embed the state in the HTML for initial render
-      page = page.replace(/{{state}}/g, JSON.stringify(state));
-
-      // game ID
-      page = page.replace(/{{gameId}}/g, gameID);
-
-      // favicon
+      // favicon logic
       let favicon = '/x-favicon.png';
       if (state.settings.streamerMark === Mark.X) {
         if (state.turn === Player.STREAMER) {
@@ -89,64 +145,42 @@ export default {
           favicon = '/o-favicon.png';
         }
       }
-      page = page.replace(/{{favicon}}/g, favicon);
 
-      // current player and their mark
+      // turn classes logic
+      let streamerTurnClass = '';
+      let chatTurnClass = '';
       if (state.turn === Player.STREAMER) {
-        page = page.replace(/{{streamerTurn}}/g, state.settings.streamerMark === Mark.X ? 'x turn' : 'o turn');
-        page = page.replace(/{{chatTurn}}/g, state.settings.streamerMark === Mark.X ? 'o' : 'x');
+        streamerTurnClass = state.settings.streamerMark === Mark.X ? 'x turn' : 'o turn';
+        chatTurnClass = state.settings.streamerMark === Mark.X ? 'o' : 'x';
       } else {
-        page = page.replace(/{{streamerTurn}}/g, state.settings.streamerMark === Mark.X ? 'x' : 'o');
-        page = page.replace(/{{chatTurn}}/g, state.settings.streamerMark === Mark.X ? 'o turn' : 'x turn');
+        streamerTurnClass = state.settings.streamerMark === Mark.X ? 'x' : 'o';
+        chatTurnClass = state.settings.streamerMark === Mark.X ? 'o turn' : 'x turn';
       }
 
-      // board state
-      page = page.replace(/{{cell00}}/g, state.board[0][0] === Mark.X ? 'x disabled' : state.board[0][0] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell10}}/g, state.board[0][1] === Mark.X ? 'x disabled' : state.board[0][1] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell20}}/g, state.board[0][2] === Mark.X ? 'x disabled' : state.board[0][2] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell01}}/g, state.board[1][0] === Mark.X ? 'x disabled' : state.board[1][0] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell11}}/g, state.board[1][1] === Mark.X ? 'x disabled' : state.board[1][1] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell21}}/g, state.board[1][2] === Mark.X ? 'x disabled' : state.board[1][2] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell02}}/g, state.board[2][0] === Mark.X ? 'x disabled' : state.board[2][0] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell12}}/g, state.board[2][1] === Mark.X ? 'x disabled' : state.board[2][1] === Mark.O ? 'o disabled' : '');
-      page = page.replace(/{{cell22}}/g, state.board[2][2] === Mark.X ? 'x disabled' : state.board[2][2] === Mark.O ? 'o disabled' : '');
+      // links logic
+      const chatLink = `${origin}/${gameID}`;
+      const embedLink = `${origin}/${gameID}/embed`;
+      const streamerLink = token ? `${origin}/${gameID}/control/${token}` : `${origin}/${gameID}/control`;
+      const streamerDisplayLink = token ? `${origin}/${gameID}/control/*****` : `${origin}/${gameID}/control`;
 
-      // settings
-      page = page.replace(/{{firstMoveStreamer}}/g, `${state.settings.first === Player.STREAMER ? 'checked' : ''}`);
-      page = page.replace(/{{firstMoveChat}}/g, `${state.settings.first === Player.CHAT ? 'checked' : ''}`);
+      const html = renderGame(
+        state,
+        gameID,
+        favicon,
+        streamerTurnClass,
+        chatTurnClass,
+        chatLink,
+        embedLink,
+        streamerLink,
+        streamerDisplayLink,
+        isAuthorized,
+        user,
+        isEmbed,
+        isControl,
+        providers,
+      );
 
-      page = page.replace(/{{streamerMarkX}}/g, `${state.settings.streamerMark === Mark.X ? 'checked' : ''}`);
-      page = page.replace(/{{streamerMarkO}}/g, `${state.settings.streamerMark === Mark.O ? 'checked' : ''}`);
-
-      page = page.replace(/{{modeRegular}}/g, `${state.settings.mode === GameMode.REGULAR ? 'checked' : ''}`);
-      page = page.replace(/{{modeVote}}/g, `${state.settings.mode === GameMode.VOTE ? 'checked' : ''}`);
-
-      page = page.replace(/{{chatTurnTime}}/g, `${state.settings.chatTurnTime}`);
-      page = page.replace(/{{chatTurnTimeMin}}/g, `${CHAT_TURN_TIME_MIN}`);
-      page = page.replace(/{{chatTurnTimeMax}}/g, `${CHAT_TURN_TIME_MAX}`);
-      page = page.replace(/{{gamesPerRound}}/g, `${state.settings.gamesPerRound}`);
-
-      // links
-      const chatLink = `${url.origin}/${gameID}`;
-      page = page.replace(/{{chatLink}}/g, chatLink);
-
-      const embedLink = `${url.origin}/${gameID}/embed`;
-      page = page.replace(/{{embedLink}}/g, embedLink);
-
-      const streamerLink = token ? `${url.origin}/${gameID}/${token}` : chatLink;
-      page = page.replace(/{{streamerLink}}/g, streamerLink);
-
-      const streamerDisplayLink = token ? `${url.origin}/${gameID}/*****` : chatLink;
-      page = page.replace(/{{streamerDisplayLink}}/g, streamerDisplayLink);
-
-      // Remove settings and links panels if not authorized
-      if (!token) {
-        page = page.replace(/<section class="share">[\s\S]*?<\/section>/g, '');
-        page = page.replace(/<section class="settings">[\s\S]*?<\/section>/g, '');
-        page = page.replace(/<section class="links-panel">[\s\S]*?<\/section>/g, '');
-      }
-
-      return new Response(page, { headers });
+      return new Response(html, { headers });
     }
 
     /**

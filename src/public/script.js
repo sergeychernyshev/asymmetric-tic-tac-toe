@@ -15,6 +15,7 @@ const HideClass = 'hide';
 
 // DOM elements
 const favicon = document.querySelector("link[rel='icon']");
+const navIcon = document.getElementById('nav-icon');
 const streamer = document.querySelector('.streamer');
 const chat = document.querySelector('.chat');
 const turnMessage = document.querySelector('.turn-message');
@@ -123,10 +124,20 @@ let currentWebSocket = null;
 function join() {
   // If we are running via wrangler dev, use ws:
   const wss = document.location.protocol === 'http:' ? 'ws://' : 'wss://';
-  
+
   const pathParts = window.location.pathname.split('/').filter((p) => p);
   const gameID = pathParts[0];
-  const token = pathParts.length > 1 && pathParts[1] !== 'embed' ? pathParts[1] : null;
+  let token = null;
+
+  if (pathParts.length > 1) {
+    if (pathParts[1] === 'control') {
+      if (pathParts.length > 2) {
+        token = pathParts[2];
+      }
+    } else if (pathParts[1] !== 'embed') {
+      token = pathParts[1];
+    }
+  }
 
   let wsUrl = `${wss}${window.location.hostname}:${window.location.port}/websocket?game=${gameID}`;
 
@@ -226,8 +237,10 @@ function updateGameFromstate(state) {
 
   if (getTurnMark(state) === XMark) {
     favicon.href = '/x-favicon.png';
+    if (navIcon) navIcon.src = '/x-favicon.png';
   } else {
     favicon.href = '/o-favicon.png';
+    if (navIcon) navIcon.src = '/o-favicon.png';
   }
 
   // Clear UI
@@ -497,3 +510,10 @@ if (settingsPanel) {
     });
   }
 }
+
+// Global dialog click-outside close handler
+document.addEventListener('click', (e) => {
+  if (e.target.tagName === 'DIALOG') {
+    e.target.close();
+  }
+});
