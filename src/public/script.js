@@ -430,6 +430,13 @@ if (!isEmbedded) {
     const isCell = target.classList.contains('grid-cell');
 
     if (isCell && currentWebSocket !== null) {
+      // If streamer is making a move for the chat, ask for confirmation
+      if (state.authorized && state.turn === CHAT) {
+        if (!confirm('Are you sure you want to make a move for the chat?')) {
+          return;
+        }
+      }
+
       const cellValueX = Number.parseInt(target.dataset.x);
       const cellValueY = Number.parseInt(target.dataset.y);
       disableUI = true;
