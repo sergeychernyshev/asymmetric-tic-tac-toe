@@ -53,13 +53,18 @@ export async function handleAuth(request: Request, env: Env): Promise<Response> 
     // Phase 1: Redirect to provider
     const state = crypto.randomUUID();
     const authUrl = provider.getAuthUrl(env, state, origin);
+    const returnTo = url.searchParams.get('returnTo');
+
+    const headers = new Headers();
+    headers.set('Location', authUrl);
+    headers.append('Set-Cookie', `auth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=300; Secure`);
+    if (returnTo) {
+      headers.append('Set-Cookie', `auth_return_to=${returnTo}; Path=/; HttpOnly; SameSite=Lax; Max-Age=300; Secure`);
+    }
 
     return new Response(null, {
       status: 302,
-      headers: {
-        Location: authUrl,
-        'Set-Cookie': `auth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=300; Secure`,
-      },
+      headers,
     });
   } else {
     // Phase 2: Callback
@@ -84,9 +89,12 @@ export async function handleAuth(request: Request, env: Env): Promise<Response> 
       const signature = await sign(sessionData, env.SESSION_SECRET);
       const sessionValue = btoa(sessionData) + '.' + btoa(signature);
 
+      const returnTo = cookies['auth_return_to'] || '/';
+
       const headers = new Headers();
-      headers.set('Location', '/');
+      headers.set('Location', returnTo);
       headers.append('Set-Cookie', `auth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
+      headers.append('Set-Cookie', `auth_return_to=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
       headers.append('Set-Cookie', `session=${sessionValue}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=2592000`);
 
       return new Response(null, {

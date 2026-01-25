@@ -5,6 +5,36 @@
 
 body {
   font-family: Verdana, Geneva, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+nav {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  padding: 0.3rem 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.nav-content {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.nav-brand {
+  font-weight: bold;
+  font-size: 1.3rem;
+  text-decoration: none;
+  color: #333;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
 }
 
 .start-button,
@@ -170,6 +200,12 @@ h1 {
   display: none;
 }
 
+.game-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .game-board {
   display: flex;
   flex-direction: column;
@@ -191,8 +227,8 @@ h1 {
 .grid-cell {
   background-color: white;
   border: 1px solid black;
-  height: 100px;
-  width: 100px;
+  height: 5rem;
+  width: 5rem;
   text-align: center;
   cursor: pointer;
 }
@@ -227,15 +263,15 @@ h1 {
 
 .x::before {
   content: url('/x.svg');
-  width: 75px;
-  height: 75px;
+  width: 3rem;
+  height: 3rem;
   stroke: black;
 }
 
 .o::before {
   content: url('/o.svg');
-  width: 75px;
-  height: 75px;
+  width: 3rem;
+  height: 3rem;
   stroke: black;
 }
 
@@ -327,7 +363,8 @@ form {
 
 .sync {
   padding: 1em;
-  max-width: 360px;
+  max-width: 100%;
+
   text-align: center;
 }
 
@@ -531,11 +568,68 @@ form {
   background-color: #0077b5;
 }
 
+.login-link {
+  color: #007bff;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.login-link:hover {
+  text-decoration: underline;
+}
+
+dialog {
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 0;
+  max-width: 90vw;
+  width: 300px;
+}
+
+dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.login-dialog-content {
+  position: relative;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.login-dialog-content h3 {
+  margin: 0;
+  text-align: center;
+}
+
+.close-dialog-x {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #666;
+  padding: 0.2rem;
+}
+
+.close-dialog-x:hover {
+  color: #333;
+}
+
+.login-btn.linkedin {
+  background-color: #0077b5;
+}
+
 .logout-link {
   display: inline-block;
   color: #007bff;
   text-decoration: none;
-  font-size: 0.9em;
+  font-size: 0.75rem;
 }
 
 .logout-link:hover {
@@ -548,8 +642,8 @@ form {
 
 .user-avatar-container {
   position: relative;
-  width: 32px;
-  height: 32px;
+  width: 1.3rem;
+  height: 1.3rem;
 }
 
 .user-avatar-container img.avatar {
@@ -561,10 +655,10 @@ form {
 
 .user-avatar-container img.provider-icon {
   position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 14px;
-  height: 14px;
+  bottom: -1px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: white;
   padding: 1px;

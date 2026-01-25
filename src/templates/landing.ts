@@ -16,29 +16,51 @@ export function renderIndex(providers: { name: string; url: string; class: strin
   </head>
 
   <body>
+    <nav>
+      <div class="nav-content">
+        <div class="nav-left">
+          <a href="/" class="nav-brand">Tic-Tac-Toe</a>
+        </div>
+        <div class="nav-right">
+          ${
+            user
+              ? `
+        <div id="user-info" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+          ${
+            user.picture
+              ? `
+          <div class="user-avatar-container">
+            <img src="${user.picture}" alt="${user.name}" class="avatar" />
+            <img src="https://www.google.com/s2/favicons?domain=${user.provider === 'twitch' ? 'twitch.tv' : user.provider === 'linkedin' ? 'linkedin.com' : 'google.com'}&sz=32" 
+                 alt="${user.provider}" class="provider-icon" />
+          </div>`
+              : ''
+          }
+          <p style="margin: 0; display: flex; align-items: center; gap: 5px; font-size: 0.8rem;">
+            <span id="user-name" style="font-weight: bold">${user.name}</span>
+          </p>
+          <a href="/auth/logout" class="logout-link" style="margin-left: 2px;">Logout</a>
+        </div>
+          `
+              : `
+          <a href="#" class="login-link" onclick="document.getElementById('login-dialog').showModal(); return false;">Login</a>
+          <dialog id="login-dialog">
+            <div class="login-dialog-content">
+              <button onclick="document.getElementById('login-dialog').close()" class="close-dialog-x" aria-label="Close">&times;</button>
+              <h3>Login</h3>
+              <div class="login-buttons">
+                ${providers.map((p) => `<a href="${p.url}" class="login-btn ${p.class}">${p.name}</a>`).join('')}
+              </div>
+            </div>
+          </dialog>
+          `
+          }
+        </div>
+      </div>
+    </nav>
     <section class="start-game">
       <h1>Tic-Tac-Toe</h1>
 
-      ${
-        user
-          ? `
-      <div id="user-info" style="margin-bottom: 20px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px;">
-        ${
-          user.picture
-            ? `
-        <div class="user-avatar-container">
-          <img src="${user.picture}" alt="${user.name}" class="avatar" />
-          <img src="https://www.google.com/s2/favicons?domain=${user.provider === 'twitch' ? 'twitch.tv' : user.provider === 'linkedin' ? 'linkedin.com' : 'google.com'}&sz=32" 
-               alt="${user.provider}" class="provider-icon" />
-        </div>`
-            : ''
-        }
-        <p style="margin: 0;">Welcome, <span id="user-name" style="font-weight: bold">${user.name}</span>!</p>
-        <a href="/auth/logout" class="logout-link" style="margin-left: 10px;">Logout</a>
-      </div>
-      `
-          : ''
-      }
 
       <form class="join-game">
         <label for="game-id">Join Existing Game</label>
@@ -49,23 +71,18 @@ export function renderIndex(providers: { name: string; url: string; class: strin
       </form>
 
       <button class="start-button">Start New Game</button>
-
-      ${
-        !user && providers && providers.length > 0
-          ? `
-      <div class="divider">Or Login With</div>
-
-      <div class="auth-section">
-        <div class="login-buttons">
-          ${providers.map((provider) => `<a href="${provider.url}" class="login-btn ${provider.class}">${provider.name}</a>`).join('\n')}
-        </div>
-      </div>
-      `
-          : ''
-      }
     </section>
 
     <script>
+      const loginDialog = document.getElementById('login-dialog');
+      if (loginDialog) {
+        loginDialog.addEventListener('click', (e) => {
+          if (e.target === loginDialog) {
+            loginDialog.close();
+          }
+        });
+      }
+
       function generateGameId() {
         const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
         let result = '';

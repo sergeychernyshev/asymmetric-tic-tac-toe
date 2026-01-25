@@ -191,7 +191,7 @@ export class TicTacToeDO extends DurableObject<Env> {
     // Get user identity if present
     const user = await verifySession(request, this.env);
     const userId = user?.id;
-    
+
     // Check token validity
     const authorizedByToken = !!token && (await this.checkToken(token));
 
@@ -226,7 +226,7 @@ export class TicTacToeDO extends DurableObject<Env> {
     const userId = attachment?.userId;
     const authorizedByToken = !!attachment?.authorizedByToken;
     const authorized = authorizedByToken || (!!userId && userId === this.state.owner);
-    
+
     const sessionId = attachment?.sessionId;
     const msg = { ...this.state, authorized, sessionId };
 
@@ -453,7 +453,7 @@ export class TicTacToeDO extends DurableObject<Env> {
     const userId = attachment?.userId;
     const authorizedByToken = !!attachment?.authorizedByToken;
     const authorized = authorizedByToken || (!!userId && userId === this.state.owner);
-    
+
     const sessionId = attachment?.sessionId;
 
     if (typeof messageString === 'string') {
@@ -519,8 +519,10 @@ export class TicTacToeDO extends DurableObject<Env> {
           } else {
             // Record vote
             if (!this.state.voters) this.state.voters = {};
-            if (sessionId) {
-              this.state.voters[sessionId] = [y, x];
+            const voterId = userId || sessionId;
+
+            if (voterId) {
+              this.state.voters[voterId] = [y, x];
 
               // Rebuild votes array from voters map
               this.state.votes = Object.values(this.state.voters);

@@ -507,3 +507,10 @@ if (settingsPanel) {
     });
   }
 }
+
+// Global dialog click-outside close handler
+document.addEventListener('click', (e) => {
+  if (e.target.tagName === 'DIALOG') {
+    e.target.close();
+  }
+});

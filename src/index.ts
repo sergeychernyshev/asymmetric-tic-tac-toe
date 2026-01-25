@@ -23,6 +23,12 @@ export default {
       return handleAuth(request, env);
     }
 
+    const returnTo = encodeURIComponent(url.pathname + url.search);
+    const providers = [];
+    if (env.GOOGLE_CLIENT_ID) providers.push({ name: 'Google', url: `/auth/google?returnTo=${returnTo}`, class: 'google' });
+    if (env.TWITCH_CLIENT_ID) providers.push({ name: 'Twitch', url: `/auth/twitch?returnTo=${returnTo}`, class: 'twitch' });
+    if (env.LINKEDIN_CLIENT_ID) providers.push({ name: 'LinkedIn', url: `/auth/linkedin?returnTo=${returnTo}`, class: 'linkedin' });
+
     // // API Routes
     // if (pathParts.length > 1 && pathParts[0] === 'api' && pathParts[1] === 'me') {
     //   const user = await verifySession(request, env);
@@ -64,11 +70,6 @@ export default {
         }
       }
     } else if (pathParts.length === 0 || pathParts[0] === 'index.html') {
-      const providers = [];
-      if (env.GOOGLE_CLIENT_ID) providers.push({ name: 'Google', url: '/auth/google', class: 'google' });
-      if (env.TWITCH_CLIENT_ID) providers.push({ name: 'Twitch', url: '/auth/twitch', class: 'twitch' });
-      if (env.LINKEDIN_CLIENT_ID) providers.push({ name: 'LinkedIn', url: '/auth/linkedin', class: 'linkedin' });
-
       const user = await verifySession(request, env);
       const html = renderIndex(providers, user);
 
@@ -112,7 +113,7 @@ export default {
       }
       // Try to claim the game if it is new
       await stub.claim(user.id);
-      
+
       const state = await stub.getState();
       if (state.owner !== user.id) {
         return new Response('You do not own this game', { status: 403 });
@@ -176,6 +177,7 @@ export default {
         user,
         isEmbed,
         isControl,
+        providers,
       );
 
       return new Response(html, { headers });

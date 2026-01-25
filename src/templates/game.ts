@@ -15,6 +15,7 @@ export function renderGame(
   user: UserProfile | null,
   isEmbed: boolean,
   isControl: boolean,
+  providers: { name: string; url: string; class: string }[],
 ): string {
   const getCellClass = (row: number, col: number) => {
     const val = state.board[row][col];
@@ -42,35 +43,53 @@ export function renderGame(
     <script src="/script.js" defer></script>
   </head>
   <body>
-    <main>
-      <section>
-        ${
-          user && !isEmbed
-            ? `
-        <div id="user-info" style="margin-bottom: 10px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 10px;">
+    ${
+      !isEmbed
+        ? `
+    <nav>
+      <div class="nav-content">
+        <div class="nav-left">
+          <a href="/" class="nav-brand">Tic-Tac-Toe</a>
+        </div>
+        <div class="nav-right">
           ${
-            user.picture
+            user
               ? `
-          <div class="user-avatar-container">
-            <img src="${user.picture}" alt="${user.name}" class="avatar" />
-            <img src="https://www.google.com/s2/favicons?domain=${user.provider === 'twitch' ? 'twitch.tv' : user.provider === 'linkedin' ? 'linkedin.com' : 'google.com'}&sz=32" 
-                 alt="${user.provider}" class="provider-icon" />
-          </div>`
-              : ''
-          }
-          <span style="font-size: 0.9em;"><span style="font-weight: bold">${user.name}</span></span>
-          <a href="/auth/logout" class="logout-link" style="margin-left: 5px; font-size: 0.8em;">Logout</a>
-          ${
-            !isControl && state.owner === user.id
-              ? `<a href="/${gameID}/control" title="Go to Control Panel" style="text-decoration: none; font-size: 1.2em;">⚙️</a>`
-              : ''
+          <div id="user-info" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+            ${
+              user.picture
+                ? `
+            <div class="user-avatar-container">
+              <img src="${user.picture}" alt="${user.name}" class="avatar" />
+              <img src="https://www.google.com/s2/favicons?domain=${user.provider === 'twitch' ? 'twitch.tv' : user.provider === 'linkedin' ? 'linkedin.com' : 'google.com'}&sz=32" 
+                   alt="${user.provider}" class="provider-icon" />
+            </div>`
+                : ''
+            }
+                      <span style="font-size: 0.8rem;"><span style="font-weight: bold">${user.name}</span></span>
+                      <a href="/auth/logout" class="logout-link" style="margin-left: 2px;">Logout</a>
+                    </div>
+                    `
+              : `          <a href="#" class="login-link" onclick="document.getElementById('login-dialog').showModal(); return false;">Login</a>
+          <dialog id="login-dialog">
+            <div class="login-dialog-content">
+              <button onclick="document.getElementById('login-dialog').close()" class="close-dialog-x" aria-label="Close">&times;</button>
+              <h3>Login</h3>
+              <div class="login-buttons">
+                ${providers.map((p) => `<a href="${p.url}" class="login-btn ${p.class}">${p.name}</a>`).join('')}
+              </div>
+            </div>
+          </dialog>
+          `
           }
         </div>
-        `
-            : ''
-        }
+      </div>
+    </nav>`
+        : ''
+    }
+    <main>
+      <section class="game-wrapper">
         <div class="game-board">
-          <!-- <h1>Tic-Tac-Toe</h1> -->
           <div class="turn-status">
             <span class="streamer player ${streamerTurnClass}"></span>
             <div class="turn-progress">
@@ -99,6 +118,11 @@ export function renderGame(
         </div>
         <div class="sync hide">Please wait for you turn to sync...</div>
       </section>
+      ${
+        user && !isControl && state.owner === user.id
+          ? `<a href="/${gameID}/control" title="Go to Control Panel" style="text-decoration: none; font-size: 1.5rem;">⚙️</a>`
+          : ''
+      }
 
       <div>
         ${
