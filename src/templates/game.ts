@@ -49,7 +49,10 @@ export function renderGame(
     <nav>
       <div class="nav-content">
         <div class="nav-left">
-          <a href="/" class="nav-brand">Tic-Tac-Toe</a>
+          <a href="/" class="nav-brand">
+            <img src="${favicon}" alt="" class="nav-icon" id="nav-icon" />
+            Tic-Tac-Toe
+          </a>
         </div>
         <div class="nav-right">
           ${

@@ -19,7 +19,10 @@ export function renderIndex(providers: { name: string; url: string; class: strin
     <nav>
       <div class="nav-content">
         <div class="nav-left">
-          <a href="/" class="nav-brand">Tic-Tac-Toe</a>
+          <a href="/" class="nav-brand">
+            <img src="/x-favicon.png" alt="" class="nav-icon" />
+            Tic-Tac-Toe
+          </a>
         </div>
         <div class="nav-right">
           ${
@@ -40,18 +43,7 @@ export function renderIndex(providers: { name: string; url: string; class: strin
           <a href="/auth/logout" class="logout-link" title="Logout"><span>Logout</span></a>
         </div>
           `
-              : `
-          <a href="#" class="login-link" onclick="document.getElementById('login-dialog').showModal(); return false;">Login</a>
-          <dialog id="login-dialog">
-            <div class="login-dialog-content">
-              <button onclick="document.getElementById('login-dialog').close()" class="close-dialog-x" aria-label="Close">&times;</button>
-              <h3>Login</h3>
-              <div class="login-buttons">
-                ${providers.map((p) => `<a href="${p.url}" class="login-btn ${p.class}">${p.name}</a>`).join('')}
-              </div>
-            </div>
-          </dialog>
-          `
+              : ''
           }
         </div>
       </div>
@@ -69,6 +61,20 @@ export function renderIndex(providers: { name: string; url: string; class: strin
       </form>
 
       <button class="start-button">Start New Game</button>
+
+      ${
+        !user && providers && providers.length > 0
+          ? `
+      <div class="divider">Or Login With</div>
+
+      <div class="auth-section">
+        <div class="login-buttons">
+          ${providers.map((provider) => `<a href="${provider.url}" class="login-btn ${provider.class}">${provider.name}</a>`).join('\n')}
+        </div>
+      </div>
+      `
+          : ''
+      }
     </section>
 
     <script>

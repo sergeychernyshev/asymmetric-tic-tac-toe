@@ -31,6 +31,17 @@ nav {
   margin: 0.1rem;
   text-decoration: none;
   color: #333;
+  display: flex;
+  align-items: center;
+}
+
+.nav-icon {
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-right: 0.4rem;
+  border: 1px solid #333;
+  border-radius: 3px;
+  padding: 1px;
 }
 
 .nav-right {
@@ -682,6 +693,7 @@ dialog::backdrop {
 #user-name {
   font-size: 0.9rem;
   font-weight: bold;
+  margin-right: 0.5rem;
 }
 
 @media (max-width: 25rem) {

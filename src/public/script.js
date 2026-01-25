@@ -15,6 +15,7 @@ const HideClass = 'hide';
 
 // DOM elements
 const favicon = document.querySelector("link[rel='icon']");
+const navIcon = document.getElementById('nav-icon');
 const streamer = document.querySelector('.streamer');
 const chat = document.querySelector('.chat');
 const turnMessage = document.querySelector('.turn-message');
@@ -236,8 +237,10 @@ function updateGameFromstate(state) {
 
   if (getTurnMark(state) === XMark) {
     favicon.href = '/x-favicon.png';
+    if (navIcon) navIcon.src = '/x-favicon.png';
   } else {
     favicon.href = '/o-favicon.png';
+    if (navIcon) navIcon.src = '/o-favicon.png';
   }
 
   // Clear UI
