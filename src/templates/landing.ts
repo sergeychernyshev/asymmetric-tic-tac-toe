@@ -55,7 +55,7 @@ export function renderIndex(providers: { name: string; url: string; class: strin
       <form class="join-game">
         <label for="game-id">Join Existing Game</label>
         <div class="input-group">
-          <input type="text" id="game-id" name="game-id" placeholder="ABC-123" pattern="[A-Za-z]{3}[ -]?[0-9]{3}" required />
+          <input type="text" id="game-id" name="game-id" placeholder="ABC-123" pattern="[A-Za-z]{3}[ -]*[0-9]{3}" required />
           <button type="submit">Join</button>
         </div>
       </form>
