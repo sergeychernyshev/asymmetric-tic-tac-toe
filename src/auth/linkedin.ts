@@ -19,7 +19,7 @@ export const LinkedInProvider = new GenericOAuth2Provider({
   extractProfile: (data: any) => {
     const userData = LinkedInUserSchema.parse(data);
     return {
-      id: userData.sub,
+      id: `linkedin:${userData.sub}`,
       email: userData.email,
       name: userData.name,
       provider: 'linkedin',

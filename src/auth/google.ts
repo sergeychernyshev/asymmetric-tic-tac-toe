@@ -23,7 +23,7 @@ export const GoogleProvider = new GenericOAuth2Provider({
   extractProfile: (data: any) => {
     const userData = GoogleUserSchema.parse(data);
     return {
-      id: userData.sub,
+      id: `google:${userData.sub}`,
       email: userData.email,
       name: userData.name,
       provider: 'google',

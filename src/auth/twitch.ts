@@ -26,7 +26,7 @@ export const TwitchProvider = new GenericOAuth2Provider({
     if (!data.data || data.data.length === 0) throw new Error('No user data found');
     const userData = TwitchUserSchema.parse(data.data[0]);
     return {
-      id: userData.id,
+      id: `twitch:${userData.id}`,
       email: userData.email || '',
       name: userData.display_name,
       provider: 'twitch',
