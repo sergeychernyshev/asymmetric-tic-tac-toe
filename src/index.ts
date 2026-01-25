@@ -41,7 +41,13 @@ export default {
     if (env.LINKEDIN_CLIENT_ID) providers.push({ name: 'LinkedIn', url: `/auth/linkedin?returnTo=${returnTo}`, class: 'linkedin' });
 
     // API Route for deleting games
-    if (pathParts.length > 2 && pathParts[0] === 'api' && pathParts[1] === 'games' && pathParts[2] === 'delete' && request.method === 'POST') {
+    if (
+      pathParts.length > 2 &&
+      pathParts[0] === 'api' &&
+      pathParts[1] === 'games' &&
+      pathParts[2] === 'delete' &&
+      request.method === 'POST'
+    ) {
       const user = await verifySession(request, env);
       if (!user) {
         return new Response('Unauthorized', { status: 401 });
@@ -90,14 +96,14 @@ export default {
       }
     } else if (pathParts.length === 0 || pathParts[0] === 'index.html') {
       const user = await verifySession(request, env);
-      
+
       let games: any[] = [];
       if (user) {
         const id = env.USER_DO.idFromName(user.id);
         const stub = env.USER_DO.get(id);
         const res = await stub.fetch('http://user-do/games/get');
         if (res.ok) {
-           games = await res.json();
+          games = await res.json();
         }
       }
 
@@ -161,8 +167,8 @@ export default {
 
       // Record participation if logged in
       if (user && !isEmbed) {
-         const role = state.owner === user.id ? 'owner' : 'player';
-         ctx.waitUntil(recordGameParticipation(env, user.id, gameID, role));
+        const role = state.owner === user.id ? 'owner' : 'player';
+        ctx.waitUntil(recordGameParticipation(env, user.id, gameID, role));
       }
 
       const isAuthorized = isControl || !!token;

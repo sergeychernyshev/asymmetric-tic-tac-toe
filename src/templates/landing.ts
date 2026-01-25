@@ -82,13 +82,14 @@ export function renderIndex(
             .map(
               (game) => `
           <li class="game-item">
-            <a href="/${game.gameId}/control" class="game-link">
+            <a href="/${game.gameId}" class="game-link">
               <span class="game-id">${game.gameId}</span>
               <span class="game-role owner" title="You are the owner of this game">👑</span>
               <time class="game-date" datetime="${new Date(game.timestamp).toISOString()}">${new Date(
                 game.timestamp,
               ).toLocaleDateString()}</time>
             </a>
+            <a href="/${game.gameId}/control" class="control-game-btn" title="Control Panel">⚙️</a>
             <button class="delete-game-btn" data-game-id="${game.gameId}" aria-label="Delete game" title="Remove from list">🗑️</button>
           </li>`,
             )
@@ -101,7 +102,7 @@ export function renderIndex(
           playedGames.length > 0
             ? `
         <div class="divider">Games You Joined</div>
-        <ul class="games-list">
+        <ul class="games-list joined">
           ${playedGames
             .map(
               (game) => `
@@ -113,7 +114,6 @@ export function renderIndex(
                 game.timestamp,
               ).toLocaleDateString()}</time>
             </a>
-            <div class="delete-game-placeholder"></div>
           </li>`,
             )
             .join('')}
