@@ -2,8 +2,19 @@ import { Mark, Player, State, TicTacToeDO } from './do';
 import { handleAuth, verifySession } from './auth/';
 import { renderGame } from './templates/game';
 import { renderIndex } from './templates/landing';
+import { UserDO } from './user_do';
 
 export { TicTacToeDO } from './do';
+export { UserDO } from './user_do';
+
+async function recordGameParticipation(env: Env, userId: string, gameId: string, role: 'owner' | 'player') {
+  const id = env.USER_DO.idFromName(userId);
+  const stub = env.USER_DO.get(id);
+  await stub.fetch('http://user-do/games/add', {
+    method: 'POST',
+    body: JSON.stringify({ gameId, role }),
+  });
+}
 
 export default {
   /**
@@ -29,16 +40,24 @@ export default {
     if (env.TWITCH_CLIENT_ID) providers.push({ name: 'Twitch', url: `/auth/twitch?returnTo=${returnTo}`, class: 'twitch' });
     if (env.LINKEDIN_CLIENT_ID) providers.push({ name: 'LinkedIn', url: `/auth/linkedin?returnTo=${returnTo}`, class: 'linkedin' });
 
-    // // API Routes
-    // if (pathParts.length > 1 && pathParts[0] === 'api' && pathParts[1] === 'me') {
-    //   const user = await verifySession(request, env);
-    //   if (user) {
-    //     return new Response(JSON.stringify(user), {
-    //       headers: { 'Content-Type': 'application/json' },
-    //     });
-    //   }
-    //   return new Response('Unauthorized', { status: 401 });
-    // }
+    // API Route for deleting games
+    if (pathParts.length > 2 && pathParts[0] === 'api' && pathParts[1] === 'games' && pathParts[2] === 'delete' && request.method === 'POST') {
+      const user = await verifySession(request, env);
+      if (!user) {
+        return new Response('Unauthorized', { status: 401 });
+      }
+
+      const { gameId } = (await request.json()) as { gameId: string };
+
+      const id = env.USER_DO.idFromName(user.id);
+      const stub = env.USER_DO.get(id);
+      await stub.fetch('http://user-do/games/delete', {
+        method: 'POST',
+        body: JSON.stringify({ gameId }),
+      });
+
+      return new Response('OK');
+    }
 
     let gameID: string | null = null;
     let token: string | null = null;
@@ -71,7 +90,18 @@ export default {
       }
     } else if (pathParts.length === 0 || pathParts[0] === 'index.html') {
       const user = await verifySession(request, env);
-      const html = renderIndex(providers, user);
+      
+      let games: any[] = [];
+      if (user) {
+        const id = env.USER_DO.idFromName(user.id);
+        const stub = env.USER_DO.get(id);
+        const res = await stub.fetch('http://user-do/games/get');
+        if (res.ok) {
+           games = await res.json();
+        }
+      }
+
+      const html = renderIndex(providers, user, games);
 
       return new Response(html, {
         headers: { 'Content-Type': 'text/html; charset=utf-8' },
@@ -102,6 +132,7 @@ export default {
     // If accessing control page with a token AND logged in, transfer ownership and redirect
     if (isControl && token && user) {
       await stub.transferOwnership(user.id);
+      ctx.waitUntil(recordGameParticipation(env, user.id, gameID, 'owner'));
       return Response.redirect(`${origin}/${gameID}/control`, 302);
     }
 
@@ -127,6 +158,12 @@ export default {
 
       // reading state to populate HTML on the server-side
       const state: State = await stub.getState();
+
+      // Record participation if logged in
+      if (user && !isEmbed) {
+         const role = state.owner === user.id ? 'owner' : 'player';
+         ctx.waitUntil(recordGameParticipation(env, user.id, gameID, role));
+      }
 
       const isAuthorized = isControl || !!token;
 
