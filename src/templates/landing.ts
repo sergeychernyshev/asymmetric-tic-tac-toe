@@ -1,6 +1,10 @@
 import { UserProfile } from '../auth';
 
-export function renderIndex(providers: { name: string; url: string; class: string }[], user: UserProfile | null): string {
+export function renderIndex(
+  providers: { name: string; url: string; class: string }[],
+  user: UserProfile | null,
+  games: any[] = [],
+): string {
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -63,6 +67,66 @@ export function renderIndex(providers: { name: string; url: string; class: strin
       <button class="start-button">Start New Game</button>
 
       ${
+        user && games && games.length > 0
+          ? (() => {
+              const ownedGames = games.filter((g) => g.role === 'owner');
+              const playedGames = games.filter((g) => g.role === 'player');
+              return `
+      <section class="recent-games">
+        ${
+          ownedGames.length > 0
+            ? `
+        <div class="divider">Your Games</div>
+        <ul class="games-list">
+          ${ownedGames
+            .map(
+              (game) => `
+          <li class="game-item">
+            <a href="/${game.gameId}/control" class="game-link">
+              <span class="game-id">${game.gameId}</span>
+              <span class="game-role owner" title="You are the owner of this game">👑</span>
+              <time class="game-date" datetime="${new Date(game.timestamp).toISOString()}">${new Date(
+                game.timestamp,
+              ).toLocaleDateString()}</time>
+            </a>
+            <button class="delete-game-btn" data-game-id="${game.gameId}" aria-label="Delete game" title="Remove from list">🗑️</button>
+          </li>`,
+            )
+            .join('')}
+        </ul>`
+            : ''
+        }
+
+        ${
+          playedGames.length > 0
+            ? `
+        <div class="divider">Games You Joined</div>
+        <ul class="games-list">
+          ${playedGames
+            .map(
+              (game) => `
+          <li class="game-item">
+            <a href="/${game.gameId}" class="game-link">
+              <span class="game-id">${game.gameId}</span>
+              <span class="game-role player"></span>
+              <time class="game-date" datetime="${new Date(game.timestamp).toISOString()}">${new Date(
+                game.timestamp,
+              ).toLocaleDateString()}</time>
+            </a>
+            <div class="delete-game-placeholder"></div>
+          </li>`,
+            )
+            .join('')}
+        </ul>`
+            : ''
+        }
+      </section>
+      `;
+            })()
+          : ''
+      }
+
+      ${
         !user && providers && providers.length > 0
           ? `
       <div class="divider">Or Login With</div>
@@ -77,6 +141,17 @@ export function renderIndex(providers: { name: string; url: string; class: strin
       }
     </section>
 
+    <dialog id="delete-game-dialog">
+      <div class="dialog-content">
+        <h3>Delete Game?</h3>
+        <p>Are you sure you want to remove this game from your list?</p>
+        <div class="dialog-buttons">
+          <button id="delete-game-yes" class="btn-primary">Yes, Delete</button>
+          <button id="delete-game-no" class="btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </dialog>
+
     <script>
       const loginDialog = document.getElementById('login-dialog');
       if (loginDialog) {
@@ -84,6 +159,57 @@ export function renderIndex(providers: { name: string; url: string; class: strin
           if (e.target === loginDialog) {
             loginDialog.close();
           }
+        });
+      }
+
+      // Format dates
+      document.querySelectorAll('time.game-date').forEach(time => {
+        const date = new Date(time.getAttribute('datetime'));
+        time.textContent = date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric' });
+      });
+
+      // Delete game logic
+      const deleteDialog = document.getElementById('delete-game-dialog');
+      const deleteYesBtn = document.getElementById('delete-game-yes');
+      const deleteNoBtn = document.getElementById('delete-game-no');
+      let gameToDelete = null;
+
+      if (deleteDialog) {
+        deleteDialog.addEventListener('click', (e) => {
+          if (e.target === deleteDialog) {
+            deleteDialog.close();
+          }
+        });
+
+        document.querySelectorAll('.delete-game-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent affecting parent elements
+            gameToDelete = btn.dataset.gameId;
+            deleteDialog.showModal();
+          });
+        });
+
+        deleteYesBtn.addEventListener('click', async () => {
+          if (gameToDelete) {
+             const res = await fetch('/api/games/delete', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ gameId: gameToDelete })
+             });
+             
+             if (res.ok) {
+               window.location.reload();
+             } else {
+               alert('Failed to delete game');
+             }
+          }
+          deleteDialog.close();
+          gameToDelete = null;
+        });
+
+        deleteNoBtn.addEventListener('click', () => {
+           deleteDialog.close();
+           gameToDelete = null;
         });
       }
 
