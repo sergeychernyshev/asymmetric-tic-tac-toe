@@ -788,7 +788,7 @@ dialog::backdrop {
 
 .games-list {
   display: grid;
-  grid-template-columns: 2fr 1fr 4fr 1fr;
+  grid-template-columns: 2fr 1fr 4fr 1fr 1fr;
   list-style: none;
   padding: 0;
   width: 100%;
@@ -801,7 +801,7 @@ dialog::backdrop {
 .game-item {
   display: grid;
   grid-template-columns: subgrid;
-  grid-column: 1 / 5;
+  grid-column: 1 / 6;
   border-bottom: 1px solid #eee;
   align-items: center;
 }
@@ -844,6 +844,22 @@ dialog::backdrop {
   padding-right: 0.8em;
 }
 
+.control-game-btn {
+  text-decoration: none;
+  font-size: 1rem;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-game-btn:hover {
+  opacity: 1;
+}
+
 .delete-game-btn {
   background: none;
   border: none;
@@ -863,6 +879,7 @@ dialog::backdrop {
   opacity: 1;
 }
 
+.control-game-placeholder,
 .delete-game-placeholder {
   width: 100%;
 }
