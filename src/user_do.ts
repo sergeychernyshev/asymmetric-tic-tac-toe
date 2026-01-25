@@ -1,5 +1,5 @@
-import { DurableObject } from "cloudflare:workers";
-import type { UserProfile } from "./auth/types";
+import { DurableObject } from 'cloudflare:workers';
+import type { UserProfile } from './auth/types';
 
 export interface GameRecord {
   gameId: string;
@@ -64,7 +64,7 @@ export class UserDO extends DurableObject<Env> {
 
   async addGame(gameId: string, role: 'owner' | 'player'): Promise<void> {
     const games = (await this.getGames()) || [];
-    
+
     // Remove existing record if present to update timestamp/role and move to top
     const index = games.findIndex((g) => g.gameId === gameId);
     if (index !== -1) {
