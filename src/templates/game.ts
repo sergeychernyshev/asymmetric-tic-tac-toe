@@ -122,7 +122,7 @@ export function renderGame(
         <div class="sync hide">Please wait for you turn to sync...</div>
       </section>
       ${
-        user && !isControl && state.owner === user.id
+        user && !isControl && !isEmbed && state.owner === user.id
           ? `<a href="/${gameID}/control" title="Go to Control Panel" class="game-control-gear-large">⚙️</a>`
           : ''
       }
