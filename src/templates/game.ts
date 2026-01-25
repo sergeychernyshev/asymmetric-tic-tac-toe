@@ -217,6 +217,16 @@ export function renderGame(
     `
         : ''
     }
+    <dialog id="confirm-move-dialog">
+      <div class="dialog-content">
+        <h3>Confirm Move</h3>
+        <p>Are you sure you want to make a move for the chat?</p>
+        <div class="dialog-buttons">
+          <button id="confirm-move-yes" class="btn-primary">Yes</button>
+          <button id="confirm-move-no" class="btn-secondary">No</button>
+        </div>
+      </div>
+    </dialog>
   </body>
 </html>`;
 }

@@ -34,6 +34,8 @@ const settingsForm = document.querySelector('.settings form');
 const modeRadioButtons = document.querySelectorAll('input[name="mode"]');
 const modeSpecificSettings = document.querySelectorAll('.mode-specific');
 const chatTurnTimeInput = document.querySelector('input[name="chat-turn-time"]');
+const confirmMoveDialog = document.getElementById('confirm-move-dialog');
+let pendingMove = null;
 
 // disable UI till next data is received
 let disableUI = false;
@@ -211,6 +213,20 @@ join();
 // This function converts the server state to the game's format and updates the UI
 function updateGameFromstate(state) {
   if (!state || !state.board) return;
+
+  // Dismiss confirmation dialog if chat moves or cell becomes taken
+  if (confirmMoveDialog && confirmMoveDialog.open) {
+    if (state.turn !== CHAT) {
+      confirmMoveDialog.close();
+      pendingMove = null;
+    } else if (pendingMove) {
+      const cellValue = state.board[pendingMove.y][pendingMove.x];
+      if (cellValue !== 0) {
+        confirmMoveDialog.close();
+        pendingMove = null;
+      }
+    }
+  }
 
   // Clear any existing timer
   if (timerInterval) {
@@ -415,6 +431,37 @@ function updateGameFromstate(state) {
 }
 
 if (!isEmbedded) {
+  const confirmMoveYes = document.getElementById('confirm-move-yes');
+  const confirmMoveNo = document.getElementById('confirm-move-no');
+
+  function executeMove(cellValueX, cellValueY, target) {
+    disableUI = true;
+    sendMessage({ move: [cellValueX, cellValueY] });
+
+    // The player clicked on a cell that is still empty
+    target.disabled = true;
+    target.classList.add(getTurnMark(state) === XMark ? XClass : OClass);
+
+    player.forEach((cell) => {
+      cell.classList.remove(TurnClass);
+    });
+  }
+
+  if (confirmMoveDialog) {
+    confirmMoveYes.addEventListener('click', () => {
+      if (pendingMove) {
+        executeMove(pendingMove.x, pendingMove.y, pendingMove.target);
+        pendingMove = null;
+      }
+      confirmMoveDialog.close();
+    });
+
+    confirmMoveNo.addEventListener('click', () => {
+      pendingMove = null;
+      confirmMoveDialog.close();
+    });
+  }
+
   board.addEventListener('click', (e) => {
     // If the user is not authorized and it's not the chat's turn, do nothing.
     if (!state.authorized && state.turn !== CHAT) {
@@ -430,25 +477,22 @@ if (!isEmbedded) {
     const isCell = target.classList.contains('grid-cell');
 
     if (isCell && currentWebSocket !== null) {
+      const cellValueX = Number.parseInt(target.dataset.x);
+      const cellValueY = Number.parseInt(target.dataset.y);
+
       // If streamer is making a move for the chat, ask for confirmation
       if (state.authorized && state.turn === CHAT) {
-        if (!confirm('Are you sure you want to make a move for the chat?')) {
+        if (confirmMoveDialog) {
+          pendingMove = { x: cellValueX, y: cellValueY, target: target };
+          confirmMoveDialog.showModal();
+          return;
+        } else if (!confirm('Are you sure you want to make a move for the chat?')) {
+          // Fallback if dialog elements are missing (though they should be there)
           return;
         }
       }
 
-      const cellValueX = Number.parseInt(target.dataset.x);
-      const cellValueY = Number.parseInt(target.dataset.y);
-      disableUI = true;
-      sendMessage({ move: [cellValueX, cellValueY] });
-
-      // The player clicked on a cell that is still empty
-      target.disabled = true;
-      target.classList.add(getTurnMark(state) === XMark ? XClass : OClass);
-
-      player.forEach((cell) => {
-        cell.classList.remove(TurnClass);
-      });
+      executeMove(cellValueX, cellValueY, target);
     }
   });
 

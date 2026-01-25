@@ -293,13 +293,13 @@ h1 {
 
 .x::before {
   content: url('/x.svg');
-  width: 3rem;
-  height: 3rem;
-  stroke: black;
 }
-
 .o::before {
   content: url('/o.svg');
+}
+
+.x::before,
+.o::before {
   width: 3rem;
   height: 3rem;
   stroke: black;
@@ -315,7 +315,6 @@ h1 {
 
 .player.o::before,
 .player.x::before {
-  font-size: 35px;
   opacity: 0.4;
 }
 
@@ -337,6 +336,7 @@ h1 {
 }
 
 .turn-status {
+  height: 3rem;
   width: 100%;
   gap: 0.5em; /* Smaller gap for vertical arrangement */
   display: flex;
@@ -709,4 +709,77 @@ dialog::backdrop {
   .nav-right {
     gap: 0.5rem;
   }
+}
+
+/* Dialog Styling */
+#confirm-move-dialog {
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+  max-width: 400px;
+  width: 90%;
+  font-family: inherit;
+}
+
+#confirm-move-dialog::backdrop {
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.dialog-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+}
+
+.dialog-content h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #333;
+}
+
+.dialog-content p {
+  margin: 0;
+  color: #666;
+  line-height: 1.5;
+}
+
+.dialog-buttons {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.dialog-buttons button {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+.btn-secondary {
+  background-color: #e9ecef;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background-color: #dde2e6;
 }
