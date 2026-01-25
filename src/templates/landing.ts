@@ -25,7 +25,7 @@ export function renderIndex(providers: { name: string; url: string; class: strin
           ${
             user
               ? `
-        <div id="user-info" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+        <div id="user-info" class="user-info-container">
           ${
             user.picture
               ? `
@@ -36,10 +36,8 @@ export function renderIndex(providers: { name: string; url: string; class: strin
           </div>`
               : ''
           }
-          <p style="margin: 0; display: flex; align-items: center; gap: 5px; font-size: 0.8rem;">
-            <span id="user-name-display" style="font-weight: bold">${user.name}</span>
-          </p>
-          <a href="/auth/logout" class="logout-link" style="margin-left: 2px;" title="Logout"><span>Logout</span></a>
+          <span id="user-name">${user.name}</span>
+          <a href="/auth/logout" class="logout-link" title="Logout"><span>Logout</span></a>
         </div>
           `
               : `

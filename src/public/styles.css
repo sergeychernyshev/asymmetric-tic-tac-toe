@@ -207,6 +207,24 @@ h1 {
   align-items: center;
 }
 
+.user-info-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.control-gear-icon {
+  text-decoration: none;
+  font-size: 1rem;
+  margin-left: 2px;
+}
+
+.game-control-gear-large {
+  text-decoration: none;
+  font-size: 1.5rem;
+}
+
 .game-board {
   display: flex;
   flex-direction: column;
@@ -363,9 +381,8 @@ form {
 }
 
 .sync {
-  padding: 1em;
-  max-width: 100%;
-
+  padding: 1rem 0.2rem;
+  font-size: 0.9rem;
   text-align: center;
 }
 
@@ -631,14 +648,11 @@ dialog::backdrop {
   color: #007bff;
   text-decoration: none;
   font-size: 0.75rem;
+  margin-left: 2px;
 }
 
 .logout-link:hover {
   text-decoration: underline;
-}
-
-#user-name {
-  font-weight: bold;
 }
 
 .user-avatar-container {
@@ -665,8 +679,13 @@ dialog::backdrop {
   padding: 1px;
 }
 
+#user-name {
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
 @media (max-width: 25rem) {
-  #user-name-display {
+  #user-name {
     display: none;
   }
   .logout-link span {

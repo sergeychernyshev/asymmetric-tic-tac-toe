@@ -55,26 +55,21 @@ export function renderGame(
           ${
             user
               ? `
-          <div id="user-info" style="display: flex; align-items: center; justify-content: center; gap: 8px;">
-            ${
-              user.picture
-                ? `
-            <div class="user-avatar-container">
-              <img src="${user.picture}" alt="${user.name}" class="avatar" />
-              <img src="https://www.google.com/s2/favicons?domain=${user.provider === 'twitch' ? 'twitch.tv' : user.provider === 'linkedin' ? 'linkedin.com' : 'google.com'}&sz=32" 
-                   alt="${user.provider}" class="provider-icon" />
-            </div>`
-                : ''
-            }
-            <span id="user-name-display" style="font-size: 0.8rem; font-weight: bold;">${user.name}</span>
-            <a href="/auth/logout" class="logout-link" style="margin-left: 2px;" title="Logout"><span>Logout</span></a>
-            ${
-              !isControl && state.owner === user.id
-                ? `<a href="/${gameID}/control" title="Go to Control Panel" style="text-decoration: none; font-size: 1rem; margin-left: 2px;">⚙️</a>`
-                : ''
-            }
-                    </div>
-                    `
+                <div id="user-info" class="user-info-container">
+                  ${
+                    user.picture
+                      ? `
+                  <div class="user-avatar-container">
+                    <img src="${user.picture}" alt="${user.name}" class="avatar" />
+                    <img src="https://www.google.com/s2/favicons?domain=${user.provider === 'twitch' ? 'twitch.tv' : user.provider === 'linkedin' ? 'linkedin.com' : 'google.com'}&sz=32" 
+                          alt="${user.provider}" class="provider-icon" />
+                  </div>`
+                      : ''
+                  }
+                  <span id="user-name">${user.name}</span>
+                  <a href="/auth/logout" class="logout-link" title="Logout"><span>Logout</span></a>
+                </div>
+                `
               : `          <a href="#" class="login-link" onclick="document.getElementById('login-dialog').showModal(); return false;">Login</a>
           <dialog id="login-dialog">
             <div class="login-dialog-content">
@@ -125,10 +120,9 @@ export function renderGame(
       </section>
       ${
         user && !isControl && state.owner === user.id
-          ? `<a href="/${gameID}/control" title="Go to Control Panel" style="text-decoration: none; font-size: 1.5rem;">⚙️</a>`
+          ? `<a href="/${gameID}/control" title="Go to Control Panel" class="game-control-gear-large">⚙️</a>`
           : ''
       }
-
       <div>
         ${
           isAuthorized
