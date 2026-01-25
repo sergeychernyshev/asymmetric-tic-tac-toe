@@ -117,7 +117,7 @@ export function renderIndex(providers: { name: string; url: string; class: strin
         e.preventDefault();
         const input = document.getElementById('game-id').value.toUpperCase().trim();
         // Extract 3 letters and 3 digits, ignoring delimiters
-        const match = input.match(/^([A-Z]{3})[ -]?([0-9]{3})$/);
+        const match = input.match(/^([A-Z]{3})[ -]*([0-9]{3})$/);
         
         if (match) {
           const gameId = \`\${match[1]}-\${match[2]}\`;
