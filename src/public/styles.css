@@ -664,3 +664,18 @@ dialog::backdrop {
   background: white;
   padding: 1px;
 }
+
+@media (max-width: 25rem) {
+  #user-name-display {
+    display: none;
+  }
+  .logout-link span {
+    display: none;
+  }
+  .logout-link::after {
+    content: '➜]';
+  }
+  .nav-right {
+    gap: 0.5rem;
+  }
+}

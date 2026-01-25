@@ -66,8 +66,13 @@ export function renderGame(
             </div>`
                 : ''
             }
-                      <span style="font-size: 0.8rem;"><span style="font-weight: bold">${user.name}</span></span>
-                      <a href="/auth/logout" class="logout-link" style="margin-left: 2px;">Logout</a>
+            <span id="user-name-display" style="font-size: 0.8rem; font-weight: bold;">${user.name}</span>
+            <a href="/auth/logout" class="logout-link" style="margin-left: 2px;" title="Logout"><span>Logout</span></a>
+            ${
+              !isControl && state.owner === user.id
+                ? `<a href="/${gameID}/control" title="Go to Control Panel" style="text-decoration: none; font-size: 1rem; margin-left: 2px;">⚙️</a>`
+                : ''
+            }
                     </div>
                     `
               : `          <a href="#" class="login-link" onclick="document.getElementById('login-dialog').showModal(); return false;">Login</a>

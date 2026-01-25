@@ -37,9 +37,9 @@ export function renderIndex(providers: { name: string; url: string; class: strin
               : ''
           }
           <p style="margin: 0; display: flex; align-items: center; gap: 5px; font-size: 0.8rem;">
-            <span id="user-name" style="font-weight: bold">${user.name}</span>
+            <span id="user-name-display" style="font-weight: bold">${user.name}</span>
           </p>
-          <a href="/auth/logout" class="logout-link" style="margin-left: 2px;">Logout</a>
+          <a href="/auth/logout" class="logout-link" style="margin-left: 2px;" title="Logout"><span>Logout</span></a>
         </div>
           `
               : `
